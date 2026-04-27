@@ -1,10 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faDownload, faTrophy, faDollarSign, faUsers, faBookOpen,
   faChartLine, faBus,
 } from "@fortawesome/free-solid-svg-icons";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import type { DateRange } from "react-day-picker";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -92,6 +99,10 @@ const subjectConfig: ChartConfig = {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
+  const [range, setRange] = useState<DateRange | undefined>({
+    from: new Date("2025-01-01"),
+    to:   new Date("2025-06-30"),
+  });
   return (
     <div className="flex h-screen overflow-hidden bg-[#f8fafc]">
       <Sidebar />
@@ -121,16 +132,48 @@ export default function ReportsPage() {
 
             {/* Tabs */}
             <Tabs defaultValue="overview">
-              <TabsList className="bg-slate-100 h-8 p-0.5">
-                {["overview", "financial", "academic"].map((t) => (
-                  <TabsTrigger
-                    key={t} value={t}
-                    className="text-[12px] h-7 capitalize data-[state=active]:bg-white data-[state=active]:text-[#212529] data-[state=active]:shadow-none"
-                  >
-                    {t}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+              <div className="flex items-center justify-between">
+                <TabsList className="bg-slate-100 h-8 p-0.5">
+                  {["overview", "financial", "academic"].map((t) => (
+                    <TabsTrigger
+                      key={t} value={t}
+                      className="text-[12px] h-7 capitalize data-[state=active]:bg-white data-[state=active]:text-[#212529] data-[state=active]:shadow-none"
+                    >
+                      {t}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+
+                {/* Date range picker */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className={cn(
+                      "flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-[12px] text-slate-700 hover:bg-slate-50 transition-colors",
+                      !range?.from && "text-slate-400"
+                    )}>
+                      <CalendarIcon className="h-3.5 w-3.5 text-slate-400" />
+                      {range?.from ? (
+                        range.to ? (
+                          <>{format(range.from, "MMM d, yyyy")} → {format(range.to, "MMM d, yyyy")}</>
+                        ) : (
+                          format(range.from, "MMM d, yyyy")
+                        )
+                      ) : (
+                        "Pick a date range"
+                      )}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                      mode="range"
+                      selected={range}
+                      onSelect={setRange}
+                      numberOfMonths={2}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
 
               {/* ── Overview ── */}
               <TabsContent value="overview" className="mt-4 flex flex-col gap-4">

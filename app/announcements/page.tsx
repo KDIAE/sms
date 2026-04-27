@@ -2,13 +2,23 @@
 
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faBullhorn, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faBullhorn } from "@fortawesome/free-solid-svg-icons";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -158,69 +168,59 @@ export default function AnnouncementsPage() {
         </main>
       </div>
 
-      {/* New Announcement modal */}
-      {showModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[2px]"
-          onClick={() => setShowModal(false)}
-        >
-          <Card className="w-[480px] shadow-xl border-slate-200" onClick={(e) => e.stopPropagation()}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-[15px]">New Announcement</CardTitle>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowModal(false)}>
-                  <FontAwesomeIcon icon={faXmark} className="text-[13px]" />
-                </Button>
+      {/* New Announcement Dialog */}
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="w-[480px] max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="text-[15px]">New Announcement</DialogTitle>
+          </DialogHeader>
+          <Separator />
+          <div className="flex flex-col gap-3 py-2">
+            <div>
+              <label className="text-[12px] font-medium text-slate-600 mb-1 block">Title</label>
+              <Input placeholder="Announcement title…" className="bg-slate-50 border-slate-200 text-[13px] h-8" />
+            </div>
+            <div>
+              <label className="text-[12px] font-medium text-slate-600 mb-1 block">Content</label>
+              <Textarea
+                placeholder="Write announcement content…"
+                rows={4}
+                className="bg-slate-50 border-slate-200 text-[13px] resize-none"
+              />
+            </div>
+            <div>
+              <label className="text-[12px] font-medium text-slate-600 mb-1.5 block">Audience</label>
+              <div className="flex gap-4">
+                {["Students", "Teachers", "Parents"].map((aud) => (
+                  <div key={aud} className="flex items-center gap-1.5">
+                    <Checkbox id={`aud-${aud}`} />
+                    <label htmlFor={`aud-${aud}`} className="text-[12px] text-slate-700 cursor-pointer">{aud}</label>
+                  </div>
+                ))}
               </div>
-            </CardHeader>
-            <Separator />
-            <CardContent className="pt-4 flex flex-col gap-3">
-              <div>
-                <label className="text-[12px] font-medium text-slate-600 mb-1 block">Title</label>
-                <Input placeholder="Announcement title…" className="bg-slate-50 border-slate-200 text-[13px] h-8" />
-              </div>
-              <div>
-                <label className="text-[12px] font-medium text-slate-600 mb-1 block">Content</label>
-                <textarea
-                  placeholder="Write announcement content…"
-                  rows={4}
-                  className="w-full px-3 py-2 rounded-md border border-slate-200 bg-slate-50 text-[13px] resize-none outline-none focus:ring-1 focus:ring-[#007BFF]"
-                />
-              </div>
-              <div>
-                <label className="text-[12px] font-medium text-slate-600 mb-1.5 block">Audience</label>
-                <div className="flex gap-4">
-                  {["Students", "Teachers", "Parents"].map((aud) => (
-                    <label key={aud} className="flex items-center gap-1.5 cursor-pointer">
-                      <input type="checkbox" className="accent-[#007BFF]" />
-                      <span className="text-[12px] text-slate-700">{aud}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="text-[12px] font-medium text-slate-600 mb-1.5 block">Priority</label>
-                <div className="flex gap-4">
-                  {["Normal", "High"].map((p) => (
-                    <label key={p} className="flex items-center gap-1.5 cursor-pointer">
-                      <input type="radio" name="priority" className="accent-[#007BFF]" defaultChecked={p === "Normal"} />
-                      <span className="text-[12px] text-slate-700">{p}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" size="sm" className="h-8 text-[13px]" onClick={() => setShowModal(false)}>
-                  Cancel
-                </Button>
-                <Button size="sm" className="bg-[#007BFF] hover:bg-[#0069d9] text-white h-8 text-[13px]">
-                  Send Announcement
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+            </div>
+            <div>
+              <label className="text-[12px] font-medium text-slate-600 mb-1.5 block">Priority</label>
+              <RadioGroup defaultValue="Normal" className="flex gap-4">
+                {["Normal", "High"].map((p) => (
+                  <div key={p} className="flex items-center gap-1.5">
+                    <RadioGroupItem value={p} id={`priority-${p}`} />
+                    <label htmlFor={`priority-${p}`} className="text-[12px] text-slate-700 cursor-pointer">{p}</label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" className="h-8 text-[13px]" onClick={() => setShowModal(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" className="bg-[#007BFF] hover:bg-[#0069d9] text-white h-8 text-[13px]">
+              Send Announcement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

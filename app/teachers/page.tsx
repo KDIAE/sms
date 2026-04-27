@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faMagnifyingGlass, faPlus, faEye, faPenToSquare, faTrash, faXmark, faGraduationCap,
+  faMagnifyingGlass, faPlus, faTrash, faChevronDown, faChevronUp,
 } from "@fortawesome/free-solid-svg-icons";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Separator } from "@/components/ui/separator";
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
@@ -38,7 +37,12 @@ const statusCls: Record<string, string> = {
 export default function TeachersPage() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
-  const [selected, setSelected] = useState<typeof TEACHERS[0] | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, typeof TEACHERS[0]>>({});
+
+  const getDraft = (t: typeof TEACHERS[0]) => drafts[t.id] ?? { ...t };
+  const updateDraft = (id: string, field: string, value: string | number) =>
+    setDrafts((prev) => ({ ...prev, [id]: { ...(prev[id] ?? TEACHERS.find((t) => t.id === id)!), [field]: value } }));
 
   const filtered = TEACHERS.filter((t) => {
     const ms = t.name.toLowerCase().includes(search.toLowerCase()) || t.subject.toLowerCase().includes(search.toLowerCase());
@@ -76,7 +80,7 @@ export default function TeachersPage() {
             </div>
 
             {/* Table card */}
-            <Card className="shadow-none border-slate-200">
+            <Card className="shadow-none border-slate-200 pb-0">
               <CardHeader className="pb-0">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-[14px] font-semibold">All Teachers</CardTitle>
@@ -112,10 +116,10 @@ export default function TeachersPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50 hover:bg-slate-50">
-                      {["ID", "Name", "Subject", "Class", "Salary", "Workload", "Status", "Actions"].map((h) => (
+                      {["ID", "Name", "Subject", "Class", "Salary", "Workload", "Status", ""].map((h, i) => (
                         <TableHead
-                          key={h}
-                          className={`text-[11px] font-semibold uppercase text-slate-500 ${h === "ID" ? "pl-6" : ""} ${h === "Actions" ? "pr-6" : ""}`}
+                          key={i}
+                          className={`text-[11px] font-semibold uppercase text-slate-500 ${h === "ID" ? "pl-6" : ""} ${h === "" ? "w-10 pr-4" : ""}`}
                         >
                           {h}
                         </TableHead>
@@ -123,34 +127,92 @@ export default function TeachersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.map((t) => (
-                      <TableRow key={t.id} className="hover:bg-slate-50 border-slate-100">
-                        <TableCell className="text-[12px] text-slate-400 font-mono pl-6">{t.id}</TableCell>
-                        <TableCell className="text-[13px] font-medium text-slate-900">{t.name}</TableCell>
-                        <TableCell className="text-[13px] text-slate-600">{t.subject}</TableCell>
-                        <TableCell className="text-[13px] text-slate-600">{t.class}</TableCell>
-                        <TableCell className="text-[13px] text-slate-700 font-medium">₹{t.salary.toLocaleString()}</TableCell>
-                        <TableCell className="text-[13px] text-slate-600">{t.workload} periods</TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${statusCls[t.status]}`}>
-                            {t.status}
-                          </span>
-                        </TableCell>
-                        <TableCell className="pr-6">
-                          <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-[#007BFF]" onClick={() => setSelected(t)}>
-                              <FontAwesomeIcon icon={faEye} className="text-[12px]" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-[#007BFF]">
-                              <FontAwesomeIcon icon={faPenToSquare} className="text-[12px]" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-red-600">
-                              <FontAwesomeIcon icon={faTrash} className="text-[12px]" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {filtered.map((t) => {
+                      const isOpen = expandedId === t.id;
+                      const draft = getDraft(t);
+                      return (
+                        <>
+                          <TableRow
+                            key={t.id}
+                            className="hover:bg-slate-50 border-slate-100 cursor-pointer select-none"
+                            onClick={() => setExpandedId(isOpen ? null : t.id)}
+                          >
+                            <TableCell className="text-[12px] text-slate-400 font-mono pl-6">{t.id}</TableCell>
+                            <TableCell className="text-[13px] font-medium text-slate-900">{t.name}</TableCell>
+                            <TableCell className="text-[13px] text-slate-600">{t.subject}</TableCell>
+                            <TableCell className="text-[13px] text-slate-600">{t.class}</TableCell>
+                            <TableCell className="text-[13px] text-slate-700 font-medium">₹{t.salary.toLocaleString()}</TableCell>
+                            <TableCell className="text-[13px] text-slate-600">{t.workload} periods</TableCell>
+                            <TableCell>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${statusCls[t.status]}`}>
+                                {t.status}
+                              </span>
+                            </TableCell>
+                            <TableCell className="pr-4 w-10" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-300 hover:text-red-500">
+                                  <FontAwesomeIcon icon={faTrash} className="text-[12px]" />
+                                </Button>
+                                <FontAwesomeIcon
+                                  icon={isOpen ? faChevronUp : faChevronDown}
+                                  className="text-[11px] text-slate-300 ml-1 pointer-events-none"
+                                />
+                              </div>
+                            </TableCell>
+                          </TableRow>
+
+                          {isOpen && (
+                            <TableRow key={`${t.id}-expand`} className="bg-slate-50 border-slate-100">
+                              <TableCell colSpan={8} className="px-6 py-4">
+                                <div className="grid grid-cols-3 gap-4">
+                                  {[
+                                    { label: "Name",     field: "name",     value: draft.name },
+                                    { label: "Subject",  field: "subject",  value: draft.subject },
+                                    { label: "Class",    field: "class",    value: draft.class },
+                                    { label: "Phone",    field: "phone",    value: draft.phone },
+                                    { label: "Email",    field: "email",    value: draft.email },
+                                    { label: "Salary",   field: "salary",   value: String(draft.salary) },
+                                    { label: "Workload", field: "workload", value: String(draft.workload) },
+                                    { label: "Joined",   field: "joined",   value: draft.joined },
+                                  ].map(({ label, field, value }) => (
+                                    <div key={field}>
+                                      <label className="text-[11px] font-semibold text-slate-400 uppercase block mb-1">{label}</label>
+                                      <Input
+                                        value={value}
+                                        onChange={(e) => updateDraft(t.id, field, e.target.value)}
+                                        className="h-8 text-[13px] bg-white border-slate-200"
+                                        onClick={(e) => e.stopPropagation()}
+                                      />
+                                    </div>
+                                  ))}
+                                  <div>
+                                    <label className="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Status</label>
+                                    <Select value={draft.status} onValueChange={(v) => updateDraft(t.id, "status", v)}>
+                                      <SelectTrigger className="h-8 text-[13px] bg-white border-slate-200" onClick={(e) => e.stopPropagation()}>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Active">Active</SelectItem>
+                                        <SelectItem value="On Leave">On Leave</SelectItem>
+                                        <SelectItem value="Inactive">Inactive</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                                <div className="flex justify-end gap-2 mt-4" onClick={(e) => e.stopPropagation()}>
+                                  <Button variant="outline" size="sm" className="h-7 text-[12px]" onClick={() => setExpandedId(null)}>
+                                    Cancel
+                                  </Button>
+                                  <Button size="sm" className="h-7 text-[12px] bg-[#007BFF] hover:bg-[#0069d9] text-white" onClick={() => setExpandedId(null)}>
+                                    Save Changes
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -159,50 +221,6 @@ export default function TeachersPage() {
           </div>
         </main>
       </div>
-
-      {/* Detail modal */}
-      {selected && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[2px]"
-          onClick={() => setSelected(null)}
-        >
-          <Card className="w-[460px] shadow-xl border-slate-200" onClick={(e) => e.stopPropagation()}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#007BFF] flex items-center justify-center">
-                    <FontAwesomeIcon icon={faGraduationCap} className="text-white text-[14px]" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-[15px]">{selected.name}</CardTitle>
-                    <p className="text-[12px] text-slate-500">{selected.id} · {selected.subject}</p>
-                  </div>
-                </div>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelected(null)}>
-                  <FontAwesomeIcon icon={faXmark} className="text-[13px]" />
-                </Button>
-              </div>
-            </CardHeader>
-            <Separator />
-            <CardContent className="pt-4 grid grid-cols-2 gap-3">
-              {[
-                ["Class",    selected.class],
-                ["Salary",   `₹${selected.salary.toLocaleString()}`],
-                ["Workload", `${selected.workload} periods/wk`],
-                ["Status",   selected.status],
-                ["Phone",    selected.phone],
-                ["Email",    selected.email],
-                ["Joined",   selected.joined],
-              ].map(([label, val]) => (
-                <div key={label}>
-                  <p className="text-[11px] text-slate-400 font-semibold uppercase">{label}</p>
-                  <p className="text-[13px] text-slate-800 mt-0.5">{val}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }

@@ -80,11 +80,11 @@ export default function SettingsPage() {
                 <Separator />
                 <CardContent className="pt-4 grid grid-cols-2 gap-4">
                   {[
-                    { label: "School Name",  val: "Kolkata Day School",                    full: true  },
-                    { label: "Address",      val: "12 Park Street, Kolkata – 700 016",      full: true  },
-                    { label: "Phone",        val: "+91 33 2229 4400"                                    },
-                    { label: "Email",        val: "admin@kolkatadayschool.edu.in"                       },
-                    { label: "Website",      val: "www.kolkatadayschool.edu.in"                         },
+                    { label: "School Name",  val: "KD Institute of Advance Education",                    full: true  },
+                    { label: "Address",      val: "Ilsoba, Depara, 13 Pandua-Kalna Road, Hooghly-712146",      full: true  },
+                    { label: "Phone",        val: "+91 74328 00090"                                     },
+                    { label: "Email",        val: "info@kdiae.in"                                       },
+                    { label: "Website",      val: "www.kdiae.in"                                        },
                     { label: "School Type",  val: "CBSE Co-Education"                                   },
                     { label: "Motto",        val: "Knowledge, Integrity, Excellence",       full: true  },
                   ].map((f) => (
@@ -114,11 +114,11 @@ export default function SettingsPage() {
                 <Separator />
                 <CardContent className="pt-4 grid grid-cols-2 gap-4">
                   {[
-                    { label: "Academic Year",       val: "2024–2025"   },
-                    { label: "Current Term",        val: "Term 2"      },
-                    { label: "Term Start Date",     val: "Jan 6, 2025" },
-                    { label: "Term End Date",       val: "May 31, 2025" },
-                    { label: "Next Session Start",  val: "Jun 16, 2025", full: true },
+                    { label: "Academic Year",       val: "2026–2027"   },
+                    { label: "Current Term",        val: "Half-yearly" },
+                    { label: "Term Start Date",     val: "Apr 1, 2026" },
+                    { label: "Term End Date",       val: "Aug 31, 2026" },
+                    { label: "Next Session Start",  val: "Sep 16, 2026", full: true },
                   ].map((f) => (
                     <div key={f.label} className={(f as { label: string; val: string; full?: boolean }).full ? "col-span-2" : ""}>
                       <label className="text-[12px] font-medium text-slate-600 mb-1 block">{f.label}</label>
