@@ -6,8 +6,6 @@ import {
   faMagnifyingGlass, faPlus, faTrash, faChevronDown, faChevronUp,
   faCloudArrowUp, faFileLines, faCircleCheck, faUser, faUsers,
 } from "@fortawesome/free-solid-svg-icons";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -533,140 +531,129 @@ export default function StudentsPage() {
   const classes = Array.from(new Set(STUDENTS.map((s) => s.class)));
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f8fafc]">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar title="Students" description="Manage all enrolled students" />
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="flex flex-col gap-6">
-
-            {/* Stat cards */}
-            <div className="grid grid-cols-4 gap-4">
-              {[
-                { label: "Total Students",       value: STUDENTS.length },
-                { label: "Fee Paid",              value: STUDENTS.filter((s) => s.fee === "Paid").length },
-                { label: "Partial / Unpaid",      value: STUDENTS.filter((s) => s.fee !== "Paid").length },
-                { label: "Below 75% Attendance",  value: STUDENTS.filter((s) => s.attendance < 75).length },
-              ].map((st) => (
-                <Card key={st.label} className="shadow-none border-slate-200">
-                  <CardContent className="p-4">
-                    <p className="text-2xl font-bold text-slate-900">{st.value}</p>
-                    <p className="text-[12px] text-slate-500 mt-0.5">{st.label}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Table card */}
-            <Card className="shadow-none border-slate-200 pb-0">
-              <CardHeader className="pb-0">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-[14px] font-semibold">All Students</CardTitle>
-                  <Button size="sm" className="bg-[#007BFF] hover:bg-[#0069d9] text-white text-[13px] h-8 gap-2"
-                    onClick={() => setShowWizard(true)}>
-                    <FontAwesomeIcon icon={faPlus} className="text-[11px]" /> Add Student
-                  </Button>
-                </div>
-                <div className="flex items-center gap-3 mt-3">
-                  <div className="relative flex-1 max-w-[260px]">
-                    <FontAwesomeIcon icon={faMagnifyingGlass} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px]" />
-                    <Input placeholder="Search by name or ID…" value={search} onChange={(e) => setSearch(e.target.value)}
-                      className="pl-8 bg-slate-50 border-slate-200 text-[13px] h-8" />
-                  </div>
-                  <Select value={filterClass} onValueChange={setFilterClass}>
-                    <SelectTrigger className="w-[140px] bg-slate-50 border-slate-200 text-[13px] h-8"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="All">All Classes</SelectItem>
-                      {classes.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Select value={filterFee} onValueChange={setFilterFee}>
-                    <SelectTrigger className="w-[130px] bg-slate-50 border-slate-200 text-[13px] h-8"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="All">All Fee Status</SelectItem>
-                      <SelectItem value="Paid">Paid</SelectItem>
-                      <SelectItem value="Partial">Partial</SelectItem>
-                      <SelectItem value="Unpaid">Unpaid</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-
-              <CardContent className="p-0 pt-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50 hover:bg-slate-50">
-                      {[
-                        { h: "ID",          cls: "pl-6" },
-                        { h: "Name" },
-                        { h: "Class" },
-                        { h: "Gender" },
-                        { h: "Fee Status" },
-                        { h: "Attendance" },
-                        { h: "Guardian" },
-                        { h: "Phone" },
-                        { h: "",            cls: "w-10 pr-4" },
-                      ].map(({ h, cls = "" }, i) => (
-                        <TableHead key={i} className={`text-[11px] font-semibold uppercase text-slate-500 ${cls}`}>{h}</TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filtered.map((s) => {
-                      const isOpen = expandedId === s.id;
-                      return (
-                        <>
-                          <TableRow key={s.id}
-                            className="hover:bg-slate-50 border-slate-100 cursor-pointer select-none"
-                            onClick={() => setExpandedId(isOpen ? null : s.id)}>
-                            <TableCell className="text-[12px] text-slate-400 font-mono pl-6">{s.id}</TableCell>
-                            <TableCell className="text-[13px] font-medium text-slate-900">{s.name}</TableCell>
-                            <TableCell className="text-[13px] text-slate-600">{s.class} – {s.section}</TableCell>
-                            <TableCell className="text-[13px] text-slate-600">{s.gender}</TableCell>
-                            <TableCell>
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${feeVariant[s.fee]}`}>
-                                {s.fee}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Progress value={s.attendance} className="h-1.5 w-16" />
-                                <span className={`text-[12px] font-medium ${s.attendance < 75 ? "text-red-600" : "text-slate-700"}`}>
-                                  {s.attendance}%
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-[13px] text-slate-600">
-                              <div>{s.guardian}</div>
-                              <div className="text-[11px] text-slate-400">{s.guardianRelation}</div>
-                            </TableCell>
-                            <TableCell className="text-[13px] text-slate-500">{s.guardianPhone}</TableCell>
-                            <TableCell className="pr-4 w-10" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center gap-1">
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-300 hover:text-red-500">
-                                  <FontAwesomeIcon icon={faTrash} className="text-[12px]" />
-                                </Button>
-                                <FontAwesomeIcon icon={isOpen ? faChevronUp : faChevronDown}
-                                  className="text-[11px] text-slate-300 ml-1 pointer-events-none" />
-                              </div>
-                            </TableCell>
-                          </TableRow>
-
-                          {isOpen && (
-                            <ExpandPanel key={`${s.id}-expand`} s={s} onClose={() => setExpandedId(null)} />
-                          )}
-                        </>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+    <>
+      <div className="flex flex-col gap-6">
+        {/* Stat cards */}
+        <div className="grid grid-cols-4 gap-4">
+          {[
+            { label: "Total Students",       value: STUDENTS.length },
+            { label: "Fee Paid",              value: STUDENTS.filter((s) => s.fee === "Paid").length },
+            { label: "Partial / Unpaid",      value: STUDENTS.filter((s) => s.fee !== "Paid").length },
+            { label: "Below 75% Attendance",  value: STUDENTS.filter((s) => s.attendance < 75).length },
+          ].map((st) => (
+            <Card key={st.label} className="shadow-none border-slate-200">
+              <CardContent className="p-4">
+                <p className="text-2xl font-bold text-slate-900">{st.value}</p>
+                <p className="text-[12px] text-slate-500 mt-0.5">{st.label}</p>
               </CardContent>
             </Card>
-          </div>
-        </main>
+          ))}
+        </div>
+        {/* Table card */}
+        <Card className="shadow-none border-slate-200 pb-0">
+          <CardHeader className="pb-0">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-[14px] font-semibold">All Students</CardTitle>
+              <Button size="sm" className="bg-[#007BFF] hover:bg-[#0069d9] text-white text-[13px] h-8 gap-2"
+                onClick={() => setShowWizard(true)}>
+                <FontAwesomeIcon icon={faPlus} className="text-[11px]" /> Add Student
+              </Button>
+            </div>
+            <div className="flex items-center gap-3 mt-3">
+              <div className="relative flex-1 max-w-[260px]">
+                <FontAwesomeIcon icon={faMagnifyingGlass} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[11px]" />
+                <Input placeholder="Search by name or ID…" value={search} onChange={(e) => setSearch(e.target.value)}
+                  className="pl-8 bg-slate-50 border-slate-200 text-[13px] h-8" />
+              </div>
+              <Select value={filterClass} onValueChange={setFilterClass}>
+                <SelectTrigger className="w-[140px] bg-slate-50 border-slate-200 text-[13px] h-8"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Classes</SelectItem>
+                  {classes.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={filterFee} onValueChange={setFilterFee}>
+                <SelectTrigger className="w-[130px] bg-slate-50 border-slate-200 text-[13px] h-8"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Fee Status</SelectItem>
+                  <SelectItem value="Paid">Paid</SelectItem>
+                  <SelectItem value="Partial">Partial</SelectItem>
+                  <SelectItem value="Unpaid">Unpaid</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0 pt-4">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50 hover:bg-slate-50">
+                  {[
+                    { h: "ID",          cls: "pl-6" },
+                    { h: "Name" },
+                    { h: "Class" },
+                    { h: "Gender" },
+                    { h: "Fee Status" },
+                    { h: "Attendance" },
+                    { h: "Guardian" },
+                    { h: "Phone" },
+                    { h: "",            cls: "w-10 pr-4" },
+                  ].map(({ h, cls = "" }, i) => (
+                    <TableHead key={i} className={`text-[11px] font-semibold uppercase text-slate-500 ${cls}`}>{h}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((s) => {
+                  const isOpen = expandedId === s.id;
+                  return (
+                    <>
+                      <TableRow key={s.id}
+                        className="hover:bg-slate-50 border-slate-100 cursor-pointer select-none"
+                        onClick={() => setExpandedId(isOpen ? null : s.id)}>
+                        <TableCell className="text-[12px] text-slate-400 font-mono pl-6">{s.id}</TableCell>
+                        <TableCell className="text-[13px] font-medium text-slate-900">{s.name}</TableCell>
+                        <TableCell className="text-[13px] text-slate-600">{s.class} – {s.section}</TableCell>
+                        <TableCell className="text-[13px] text-slate-600">{s.gender}</TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${feeVariant[s.fee]}`}>
+                            {s.fee}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Progress value={s.attendance} className="h-1.5 w-16" />
+                            <span className={`text-[12px] font-medium ${s.attendance < 75 ? "text-red-600" : "text-slate-700"}`}>
+                              {s.attendance}%
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-[13px] text-slate-600">
+                          <div>{s.guardian}</div>
+                          <div className="text-[11px] text-slate-400">{s.guardianRelation}</div>
+                        </TableCell>
+                        <TableCell className="text-[13px] text-slate-500">{s.guardianPhone}</TableCell>
+                        <TableCell className="pr-4 w-10" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-300 hover:text-red-500">
+                              <FontAwesomeIcon icon={faTrash} className="text-[12px]" />
+                            </Button>
+                            <FontAwesomeIcon icon={isOpen ? faChevronUp : faChevronDown}
+                              className="text-[11px] text-slate-300 ml-1 pointer-events-none" />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      {isOpen && (
+                        <ExpandPanel key={`${s.id}-expand`} s={s} onClose={() => setExpandedId(null)} />
+                      )}
+                    </>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
-
       <AddStudentWizard open={showWizard} onClose={() => setShowWizard(false)} />
-    </div>
+    </>
   );
 }

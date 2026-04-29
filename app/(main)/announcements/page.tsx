@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faBullhorn } from "@fortawesome/free-solid-svg-icons";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,100 +72,88 @@ export default function AnnouncementsPage() {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f8fafc]">
-      <Sidebar />
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar title="Announcements" description="Broadcast notices to students, teachers, and parents" />
-
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="flex flex-col gap-6">
-
-            {/* Stat cards */}
-            <div className="grid grid-cols-4 gap-4">
-              {[
-                { label: "Total Announcements", value: ANNOUNCEMENTS.length },
-                { label: "For Students",        value: ANNOUNCEMENTS.filter((a) => a.audience.includes("Students")).length },
-                { label: "For Teachers",        value: ANNOUNCEMENTS.filter((a) => a.audience.includes("Teachers")).length },
-                { label: "For Parents",         value: ANNOUNCEMENTS.filter((a) => a.audience.includes("Parents")).length },
-              ].map((st) => (
-                <Card key={st.label} className="shadow-none border-slate-200">
-                  <CardContent className="p-4">
-                    <p className="text-2xl font-bold text-slate-900">{st.value}</p>
-                    <p className="text-[12px] text-slate-500 mt-0.5">{st.label}</p>
-                  </CardContent>
-                </Card>
+    <>
+      <div className="flex flex-col gap-6">
+        {/* Stat cards */}
+        <div className="grid grid-cols-4 gap-4">
+          {[
+            { label: "Total Announcements", value: ANNOUNCEMENTS.length },
+            { label: "For Students",        value: ANNOUNCEMENTS.filter((a) => a.audience.includes("Students")).length },
+            { label: "For Teachers",        value: ANNOUNCEMENTS.filter((a) => a.audience.includes("Teachers")).length },
+            { label: "For Parents",         value: ANNOUNCEMENTS.filter((a) => a.audience.includes("Parents")).length },
+          ].map((st) => (
+            <Card key={st.label} className="shadow-none border-slate-200">
+              <CardContent className="p-4">
+                <p className="text-2xl font-bold text-slate-900">{st.value}</p>
+                <p className="text-[12px] text-slate-500 mt-0.5">{st.label}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        {/* List card */}
+        <Card className="shadow-none border-slate-200">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-[14px] font-semibold">Announcements</CardTitle>
+              <Button size="sm" className="bg-[#007BFF] hover:bg-[#0069d9] text-white text-[13px] h-8 gap-1.5" onClick={() => setShowModal(true)}>
+                <FontAwesomeIcon icon={faPlus} className="text-[12px]" />
+                New Announcement
+              </Button>
+            </div>
+            {/* Audience filter pills */}
+            <div className="flex items-center gap-2 mt-3">
+              {FILTERS.map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-3 py-1 rounded-full text-[12px] font-medium border transition-colors ${
+                    filter === f
+                      ? "bg-[#007BFF] text-white border-[#007BFF]"
+                      : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  {f}
+                </button>
               ))}
             </div>
-
-            {/* List card */}
-            <Card className="shadow-none border-slate-200">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-[14px] font-semibold">Announcements</CardTitle>
-                  <Button size="sm" className="bg-[#007BFF] hover:bg-[#0069d9] text-white text-[13px] h-8 gap-1.5" onClick={() => setShowModal(true)}>
-                    <FontAwesomeIcon icon={faPlus} className="text-[12px]" />
-                    New Announcement
-                  </Button>
-                </div>
-                {/* Audience filter pills */}
-                <div className="flex items-center gap-2 mt-3">
-                  {FILTERS.map((f) => (
-                    <button
-                      key={f}
-                      onClick={() => setFilter(f)}
-                      className={`px-3 py-1 rounded-full text-[12px] font-medium border transition-colors ${
-                        filter === f
-                          ? "bg-[#007BFF] text-white border-[#007BFF]"
-                          : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-                      }`}
-                    >
-                      {f}
-                    </button>
-                  ))}
-                </div>
-              </CardHeader>
-              <Separator />
-              <CardContent className="pt-4 flex flex-col gap-3">
-                {filtered.map((a) => (
-                  <div
-                    key={a.id}
-                    className="p-4 rounded-lg border border-slate-100 bg-slate-50 hover:bg-white hover:border-slate-200 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-[#007BFF]/10 flex items-center justify-center shrink-0 mt-0.5">
-                          <FontAwesomeIcon icon={faBullhorn} className="text-[#007BFF] text-[12px]" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[13px] font-semibold text-slate-900">{a.title}</p>
-                          <p className="text-[12px] text-slate-500 mt-1 leading-relaxed">{a.content}</p>
-                          <div className="flex items-center gap-2 mt-2 flex-wrap">
-                            {a.audience.map((aud) => (
-                              <span key={aud} className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${audienceCls[aud]}`}>
-                                {aud}
-                              </span>
-                            ))}
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${priorityCls[a.priority]}`}>
-                              {a.priority}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-[11px] text-slate-400">{a.date}</p>
-                        <p className="text-[11px] text-slate-400">{a.time}</p>
+          </CardHeader>
+          <Separator />
+          <CardContent className="pt-4 flex flex-col gap-3">
+            {filtered.map((a) => (
+              <div
+                key={a.id}
+                className="p-4 rounded-lg border border-slate-100 bg-slate-50 hover:bg-white hover:border-slate-200 transition-colors"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-[#007BFF]/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <FontAwesomeIcon icon={faBullhorn} className="text-[#007BFF] text-[12px]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-semibold text-slate-900">{a.title}</p>
+                      <p className="text-[12px] text-slate-500 mt-1 leading-relaxed">{a.content}</p>
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        {a.audience.map((aud) => (
+                          <span key={aud} className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${audienceCls[aud]}`}>
+                            {aud}
+                          </span>
+                        ))}
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${priorityCls[a.priority]}`}>
+                          {a.priority}
+                        </span>
                       </div>
                     </div>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-
-          </div>
-        </main>
+                  <div className="text-right shrink-0">
+                    <p className="text-[11px] text-slate-400">{a.date}</p>
+                    <p className="text-[11px] text-slate-400">{a.time}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
-
       {/* New Announcement Dialog */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
         <DialogContent className="w-[480px] max-w-[480px]">
@@ -221,6 +207,6 @@ export default function AnnouncementsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

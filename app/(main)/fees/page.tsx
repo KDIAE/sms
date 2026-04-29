@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -301,302 +299,288 @@ export default function FeesPage() {
   });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f8fafc]">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar title="Fees & Finance" description="Admissions, tuition, books and uniforms portal" />
-        <main className="flex-1 overflow-y-auto p-6">
-          <Tabs value={tab} onValueChange={setTab}>
-            {/* Top nav */}
-            <div className="flex items-center justify-between mb-5">
-              <TabsList>
-                <TabsTrigger value="dashboard" className="text-[12px] h-6">Dashboard</TabsTrigger>
-                <TabsTrigger value="admissions" className="text-[12px] h-6">Admissions</TabsTrigger>
-                <TabsTrigger value="tuition" className="text-[12px] h-6">Monthly Tuition</TabsTrigger>
-                <TabsTrigger value="books" className="text-[12px] h-6">Books</TabsTrigger>
-                <TabsTrigger value="uniforms" className="text-[12px] h-6">Uniforms</TabsTrigger>
-              </TabsList>
-              <div className="flex items-center gap-2">
-                <Input className="h-8 w-44 text-[12px] bg-white" placeholder="Search student…" value={search} onChange={e=>setSearch(e.target.value)} />
-                <Select value={classFilter} onValueChange={setClassFilter}>
-                  <SelectTrigger className="h-8 w-32 text-[12px] bg-white"><SelectValue placeholder="Class" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All" className="text-[12px]">All Classes</SelectItem>
-                    {CLASSES.map(c=><SelectItem key={c} value={c} className="text-[12px]">{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
+    <>
+      <Tabs value={tab} onValueChange={setTab}>
+        {/* Top nav */}
+        <div className="flex items-center justify-between mb-5">
+          <TabsList>
+            <TabsTrigger value="dashboard" className="text-[12px] h-6">Dashboard</TabsTrigger>
+            <TabsTrigger value="admissions" className="text-[12px] h-6">Admissions</TabsTrigger>
+            <TabsTrigger value="tuition" className="text-[12px] h-6">Monthly Tuition</TabsTrigger>
+            <TabsTrigger value="books" className="text-[12px] h-6">Books</TabsTrigger>
+            <TabsTrigger value="uniforms" className="text-[12px] h-6">Uniforms</TabsTrigger>
+          </TabsList>
+          <div className="flex items-center gap-2">
+            <Input className="h-8 w-44 text-[12px] bg-white" placeholder="Search student…" value={search} onChange={e=>setSearch(e.target.value)} />
+            <Select value={classFilter} onValueChange={setClassFilter}>
+              <SelectTrigger className="h-8 w-32 text-[12px] bg-white"><SelectValue placeholder="Class" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All" className="text-[12px]">All Classes</SelectItem>
+                {CLASSES.map(c=><SelectItem key={c} value={c} className="text-[12px]">{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        {/* ── DASHBOARD ── */}
+        <TabsContent value="dashboard" className="mt-0">
+          <div className="flex flex-col gap-5">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard label="Total Collected (YTD)" value={`₹${(totalCollected/100000).toFixed(2)}L`} accent />
+              <StatCard label="Admission Collected"   value={`₹${(totalAdmissionCollected/1000).toFixed(1)}K`} sub={`${Object.values(admissionFees).filter(f=>f.status==="Paid").length}/${STUDENTS.length} students`} />
+              <StatCard label="Tuition Collected"     value={`₹${(totalTuitionCollected/1000).toFixed(1)}K`} sub="This session" />
+              <StatCard label="Overdue Accounts"      value={STUDENTS.filter(s=>admissionFees[s.id]?.status!=="Paid"||getUnpaidMonths(s.id).length>0).length} sub="Students with pending dues" />
             </div>
-
-            {/* ── DASHBOARD ── */}
-            <TabsContent value="dashboard" className="mt-0">
-              <div className="flex flex-col gap-5">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <StatCard label="Total Collected (YTD)" value={`₹${(totalCollected/100000).toFixed(2)}L`} accent />
-                  <StatCard label="Admission Collected"   value={`₹${(totalAdmissionCollected/1000).toFixed(1)}K`} sub={`${Object.values(admissionFees).filter(f=>f.status==="Paid").length}/${STUDENTS.length} students`} />
-                  <StatCard label="Tuition Collected"     value={`₹${(totalTuitionCollected/1000).toFixed(1)}K`} sub="This session" />
-                  <StatCard label="Overdue Accounts"      value={STUDENTS.filter(s=>admissionFees[s.id]?.status!=="Paid"||getUnpaidMonths(s.id).length>0).length} sub="Students with pending dues" />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <Card className="shadow-none border-slate-200 col-span-2">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-[14px] font-semibold">Monthly Fee Collection 2025–26</CardTitle>
-                      <CardDescription className="text-[12px]">All fee types combined</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ChartContainer config={revenueConfig} className="h-[240px] w-full">
-                        <BarChart data={monthlyRevenue} margin={{left:0,right:0}}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                          <XAxis dataKey="month" tick={{fontSize:11}} axisLine={false} tickLine={false} tickMargin={8} />
-                          <YAxis tickFormatter={v=>`₹${v/1000}K`} tick={{fontSize:10}} axisLine={false} tickLine={false} width={48} />
-                          <ChartTooltip content={<ChartTooltipContent formatter={v=>[`₹${Number(v).toLocaleString()}`]} />} />
-                          <Bar dataKey="expected"  fill="var(--color-expected)"  radius={[3,3,0,0]} />
-                          <Bar dataKey="collected" fill="var(--color-collected)" radius={[3,3,0,0]} />
-                        </BarChart>
-                      </ChartContainer>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="shadow-none border-slate-200">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-[14px] font-semibold">Collection Breakdown</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex flex-col gap-3">
-                      {[
-                        { label:"Admissions",      amount:totalAdmissionCollected, target:STUDENTS.length*ADMISSION_FEE, color:"bg-blue-500" },
-                        { label:"Monthly Tuition", amount:totalTuitionCollected,   target:STUDENTS.reduce((a,s)=>a+TUITION_BY_CLASS[s.class]*8,0), color:"bg-emerald-500" },
-                        { label:"Books",           amount:itemFees.filter(f=>f.type==="Books").reduce((a,f)=>a+f.paid,0),   target:STUDENTS.reduce((a,s)=>a+BOOK_FEE_BY_CLASS[s.class],0), color:"bg-violet-500" },
-                        { label:"Uniforms",        amount:itemFees.filter(f=>f.type==="Uniform").reduce((a,f)=>a+f.paid,0), target:STUDENTS.length*UNIFORM_FEE, color:"bg-amber-500" },
-                      ].map(item=>{
-                        const pct=Math.round((item.amount/item.target)*100);
-                        return (
-                          <div key={item.label}>
-                            <div className="flex justify-between mb-1">
-                              <span className="text-[12px] text-slate-600 font-medium">{item.label}</span>
-                              <span className="text-[12px] text-slate-500">₹{(item.amount/1000).toFixed(1)}K <span className="text-slate-400">/ ₹{(item.target/1000).toFixed(1)}K</span></span>
-                            </div>
-                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                              <div className={`h-full ${item.color} rounded-full`} style={{width:`${pct}%`}} />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Overdue table */}
-                <Card className="shadow-none border-slate-200">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-[14px] font-semibold">Pending / Overdue</CardTitle>
-                    <CardDescription className="text-[12px]">Students with outstanding dues across any fee type</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-slate-50 hover:bg-slate-50">
-                          {["Student","Class","Admission","Unpaid Months","Books","Uniforms"].map(h=>(
-                            <TableHead key={h} className={`text-[11px] font-semibold uppercase text-slate-500 ${h==="Student"?"pl-6":""}`}>{h}</TableHead>
-                          ))}
+            <div className="grid grid-cols-3 gap-4">
+              <Card className="shadow-none border-slate-200 col-span-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-[14px] font-semibold">Monthly Fee Collection 2025–26</CardTitle>
+                  <CardDescription className="text-[12px]">All fee types combined</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ChartContainer config={revenueConfig} className="h-[240px] w-full">
+                    <BarChart data={monthlyRevenue} margin={{left:0,right:0}}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <XAxis dataKey="month" tick={{fontSize:11}} axisLine={false} tickLine={false} tickMargin={8} />
+                      <YAxis tickFormatter={v=>`₹${v/1000}K`} tick={{fontSize:10}} axisLine={false} tickLine={false} width={48} />
+                      <ChartTooltip content={<ChartTooltipContent formatter={v=>[`₹${Number(v).toLocaleString()}`]} />} />
+                      <Bar dataKey="expected"  fill="var(--color-expected)"  radius={[3,3,0,0]} />
+                      <Bar dataKey="collected" fill="var(--color-collected)" radius={[3,3,0,0]} />
+                    </BarChart>
+                  </ChartContainer>
+                </CardContent>
+              </Card>
+              <Card className="shadow-none border-slate-200">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-[14px] font-semibold">Collection Breakdown</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3">
+                  {[
+                    { label:"Admissions",      amount:totalAdmissionCollected, target:STUDENTS.length*ADMISSION_FEE, color:"bg-blue-500" },
+                    { label:"Monthly Tuition", amount:totalTuitionCollected,   target:STUDENTS.reduce((a,s)=>a+TUITION_BY_CLASS[s.class]*8,0), color:"bg-emerald-500" },
+                    { label:"Books",           amount:itemFees.filter(f=>f.type==="Books").reduce((a,f)=>a+f.paid,0),   target:STUDENTS.reduce((a,s)=>a+BOOK_FEE_BY_CLASS[s.class],0), color:"bg-violet-500" },
+                    { label:"Uniforms",        amount:itemFees.filter(f=>f.type==="Uniform").reduce((a,f)=>a+f.paid,0), target:STUDENTS.length*UNIFORM_FEE, color:"bg-amber-500" },
+                  ].map(item=>{
+                    const pct=Math.round((item.amount/item.target)*100);
+                    return (
+                      <div key={item.label}>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-[12px] text-slate-600 font-medium">{item.label}</span>
+                          <span className="text-[12px] text-slate-500">₹{(item.amount/1000).toFixed(1)}K <span className="text-slate-400">/ ₹{(item.target/1000).toFixed(1)}K</span></span>
+                        </div>
+                        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className={`h-full ${item.color} rounded-full`} style={{width:`${pct}%`}} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            </div>
+            {/* Overdue table */}
+            <Card className="shadow-none border-slate-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-[14px] font-semibold">Pending / Overdue</CardTitle>
+                <CardDescription className="text-[12px]">Students with outstanding dues across any fee type</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50 hover:bg-slate-50">
+                      {["Student","Class","Admission","Unpaid Months","Books","Uniforms"].map(h=>(
+                        <TableHead key={h} className={`text-[11px] font-semibold uppercase text-slate-500 ${h==="Student"?"pl-6":""}`}>{h}</TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {STUDENTS.filter(s=>{
+                      const adm=admissionFees[s.id];
+                      const book=itemFees.find(f=>f.studentId===s.id&&f.type==="Books");
+                      const uni=itemFees.find(f=>f.studentId===s.id&&f.type==="Uniform");
+                      return adm?.status!=="Paid"||getUnpaidMonths(s.id).length>0||book?.status!=="Paid"||uni?.status!=="Paid";
+                    }).map(s=>{
+                      const adm=admissionFees[s.id];
+                      const unpaidM=getUnpaidMonths(s.id);
+                      const book=itemFees.find(f=>f.studentId===s.id&&f.type==="Books");
+                      const uni=itemFees.find(f=>f.studentId===s.id&&f.type==="Uniform");
+                      return (
+                        <TableRow key={s.id} className="hover:bg-slate-50 border-slate-100">
+                          <TableCell className="pl-6">
+                            <p className="text-[13px] font-medium text-slate-900">{s.name}</p>
+                            <p className="text-[11px] text-slate-400">{s.rollNo}</p>
+                          </TableCell>
+                          <TableCell className="text-[13px] text-slate-600">{s.class} – {s.section}</TableCell>
+                          <TableCell><StatusBadge s={adm?.status??"Unpaid"} /></TableCell>
+                          <TableCell>
+                            {unpaidM.length>0
+                              ? <span className="text-[12px] text-red-600 font-medium">{unpaidM.length} month{unpaidM.length>1?"s":""}</span>
+                              : <span className="text-[12px] text-emerald-600">Up to date</span>}
+                          </TableCell>
+                          <TableCell><StatusBadge s={book?.status??"Unpaid"} /></TableCell>
+                          <TableCell><StatusBadge s={uni?.status??"Unpaid"} /></TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {STUDENTS.filter(s=>{
-                          const adm=admissionFees[s.id];
-                          const book=itemFees.find(f=>f.studentId===s.id&&f.type==="Books");
-                          const uni=itemFees.find(f=>f.studentId===s.id&&f.type==="Uniform");
-                          return adm?.status!=="Paid"||getUnpaidMonths(s.id).length>0||book?.status!=="Paid"||uni?.status!=="Paid";
-                        }).map(s=>{
-                          const adm=admissionFees[s.id];
-                          const unpaidM=getUnpaidMonths(s.id);
-                          const book=itemFees.find(f=>f.studentId===s.id&&f.type==="Books");
-                          const uni=itemFees.find(f=>f.studentId===s.id&&f.type==="Uniform");
-                          return (
-                            <TableRow key={s.id} className="hover:bg-slate-50 border-slate-100">
-                              <TableCell className="pl-6">
-                                <p className="text-[13px] font-medium text-slate-900">{s.name}</p>
-                                <p className="text-[11px] text-slate-400">{s.rollNo}</p>
-                              </TableCell>
-                              <TableCell className="text-[13px] text-slate-600">{s.class} – {s.section}</TableCell>
-                              <TableCell><StatusBadge s={adm?.status??"Unpaid"} /></TableCell>
-                              <TableCell>
-                                {unpaidM.length>0
-                                  ? <span className="text-[12px] text-red-600 font-medium">{unpaidM.length} month{unpaidM.length>1?"s":""}</span>
-                                  : <span className="text-[12px] text-emerald-600">Up to date</span>}
-                              </TableCell>
-                              <TableCell><StatusBadge s={book?.status??"Unpaid"} /></TableCell>
-                              <TableCell><StatusBadge s={uni?.status??"Unpaid"} /></TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* ── ADMISSIONS ── */}
-            <TabsContent value="admissions" className="mt-0">
-              <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-4 gap-4">
-                  <StatCard label="Total Target"  value={`₹${(STUDENTS.length*ADMISSION_FEE/1000).toFixed(0)}K`} />
-                  <StatCard label="Collected"     value={`₹${(totalAdmissionCollected/1000).toFixed(1)}K`} accent />
-                  <StatCard label="Fully Paid"    value={Object.values(admissionFees).filter(f=>f.status==="Paid").length} />
-                  <StatCard label="Outstanding"   value={Object.values(admissionFees).filter(f=>f.status!=="Paid"&&f.status!=="Waived").length} />
-                </div>
-                <Card className="shadow-none border-slate-200 pt-0">
-                  <CardContent className="p-0">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-slate-50 hover:bg-slate-50">
-                          {["Student","Class","Total","Paid","Balance","Date","Method","Status","Receipt",""].map((h,idx)=>(
-                            <TableHead key={idx} className={`text-[11px] font-semibold uppercase text-slate-500 ${h==="Student"?"pl-6":""}`}>{h}</TableHead>
-                          ))}
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        {/* ── ADMISSIONS ── */}
+        <TabsContent value="admissions" className="mt-0">
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-4 gap-4">
+              <StatCard label="Total Target"  value={`₹${(STUDENTS.length*ADMISSION_FEE/1000).toFixed(0)}K`} />
+              <StatCard label="Collected"     value={`₹${(totalAdmissionCollected/1000).toFixed(1)}K`} accent />
+              <StatCard label="Fully Paid"    value={Object.values(admissionFees).filter(f=>f.status==="Paid").length} />
+              <StatCard label="Outstanding"   value={Object.values(admissionFees).filter(f=>f.status!=="Paid"&&f.status!=="Waived").length} />
+            </div>
+            <Card className="shadow-none border-slate-200 pt-0">
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50 hover:bg-slate-50">
+                      {["Student","Class","Total","Paid","Balance","Date","Method","Status","Receipt",""].map((h,idx)=>(
+                        <TableHead key={idx} className={`text-[11px] font-semibold uppercase text-slate-500 ${h==="Student"?"pl-6":""}`}>{h}</TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredStudents.map(s=>{
+                      const f=admissionFees[s.id];
+                      const balance=f.amount-f.paid;
+                      return (
+                        <TableRow key={s.id} className="hover:bg-slate-50 border-slate-100">
+                          <TableCell className="pl-6">
+                            <p className="text-[13px] font-medium text-slate-900">{s.name}</p>
+                            <p className="text-[11px] text-slate-400">{s.rollNo}</p>
+                          </TableCell>
+                          <TableCell className="text-[13px] text-slate-600">{s.class}</TableCell>
+                          <TableCell className="text-[13px] text-slate-700">₹{f.amount.toLocaleString()}</TableCell>
+                          <TableCell className="text-[13px] font-medium text-emerald-700">₹{f.paid.toLocaleString()}</TableCell>
+                          <TableCell className={`text-[13px] font-medium ${balance>0?"text-red-600":"text-slate-400"}`}>
+                            {balance>0?`₹${balance.toLocaleString()}`:"—"}
+                          </TableCell>
+                          <TableCell className="text-[13px] text-slate-500">{f.date}</TableCell>
+                          <TableCell><MethodBadge m={f.method} /></TableCell>
+                          <TableCell><StatusBadge s={f.status} /></TableCell>
+                          <TableCell className="text-[12px] text-slate-400 font-mono">{f.receiptNo}</TableCell>
+                          <TableCell className="pr-4">
+                            {f.status!=="Paid"&&f.status!=="Waived"&&(
+                              <RecordPaymentPopover
+                                trigger={<Button size="sm" variant="outline" className="h-7 text-[11px] border-[#007BFF] text-[#007BFF] hover:bg-blue-50">Record</Button>}
+                                studentName={s.name} feeType="Admission Fee"
+                                totalAmount={f.amount} currentPaid={f.paid}
+                                onRecord={(amt,method,date)=>recordAdmissionPayment(s.id,amt,method,date)}
+                              />
+                            )}
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredStudents.map(s=>{
-                          const f=admissionFees[s.id];
-                          const balance=f.amount-f.paid;
-                          return (
-                            <TableRow key={s.id} className="hover:bg-slate-50 border-slate-100">
-                              <TableCell className="pl-6">
-                                <p className="text-[13px] font-medium text-slate-900">{s.name}</p>
-                                <p className="text-[11px] text-slate-400">{s.rollNo}</p>
-                              </TableCell>
-                              <TableCell className="text-[13px] text-slate-600">{s.class}</TableCell>
-                              <TableCell className="text-[13px] text-slate-700">₹{f.amount.toLocaleString()}</TableCell>
-                              <TableCell className="text-[13px] font-medium text-emerald-700">₹{f.paid.toLocaleString()}</TableCell>
-                              <TableCell className={`text-[13px] font-medium ${balance>0?"text-red-600":"text-slate-400"}`}>
-                                {balance>0?`₹${balance.toLocaleString()}`:"—"}
-                              </TableCell>
-                              <TableCell className="text-[13px] text-slate-500">{f.date}</TableCell>
-                              <TableCell><MethodBadge m={f.method} /></TableCell>
-                              <TableCell><StatusBadge s={f.status} /></TableCell>
-                              <TableCell className="text-[12px] text-slate-400 font-mono">{f.receiptNo}</TableCell>
-                              <TableCell className="pr-4">
-                                {f.status!=="Paid"&&f.status!=="Waived"&&(
-                                  <RecordPaymentPopover
-                                    trigger={<Button size="sm" variant="outline" className="h-7 text-[11px] border-[#007BFF] text-[#007BFF] hover:bg-blue-50">Record</Button>}
-                                    studentName={s.name} feeType="Admission Fee"
-                                    totalAmount={f.amount} currentPaid={f.paid}
-                                    onRecord={(amt,method,date)=>recordAdmissionPayment(s.id,amt,method,date)}
-                                  />
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        {/* ── MONTHLY TUITION ── */}
+        <TabsContent value="tuition" className="mt-0">
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-4 gap-4">
+              <StatCard label="Tuition Collected" value={`₹${(totalTuitionCollected/1000).toFixed(1)}K`} accent />
+              <StatCard label="Students Overdue"  value={overdueTuition} />
+              <StatCard label="Session"           value="2025–26" />
+              <StatCard label="Monthly Target"    value={`₹${(STUDENTS.reduce((a,s)=>a+TUITION_BY_CLASS[s.class],0)/1000).toFixed(1)}K`} />
+            </div>
+            <Card className="shadow-none border-slate-200 overflow-x-auto pt-0">
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50 hover:bg-slate-50">
+                      <TableHead className="pl-6 text-[11px] font-semibold uppercase text-slate-500 sticky left-0 bg-slate-50 z-10 min-w-[160px]">Student</TableHead>
+                      <TableHead className="text-[11px] font-semibold uppercase text-slate-500 min-w-[80px]">Class</TableHead>
+                      <TableHead className="text-[11px] font-semibold uppercase text-slate-500 min-w-[70px]">Monthly</TableHead>
+                      {MONTHS.map(m=>(
+                        <TableHead key={m} className="text-[11px] font-semibold uppercase text-slate-500 text-center min-w-[54px]">{m}</TableHead>
+                      ))}
+                      <TableHead className="text-[11px] font-semibold uppercase text-slate-500 pr-4 min-w-[80px]">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredStudents.map(s=>{
+                      const rec=monthlyData[s.id]??{studentId:s.id,payments:{}};
+                      const unpaidMonths=getUnpaidMonths(s.id);
+                      return (
+                        <TableRow key={s.id} className="hover:bg-slate-50 border-slate-100">
+                          <TableCell className="pl-6 sticky left-0 bg-white z-10">
+                            <p className="text-[13px] font-medium text-slate-900">{s.name}</p>
+                            <p className="text-[11px] text-slate-400">{s.rollNo}</p>
+                          </TableCell>
+                          <TableCell className="text-[13px] text-slate-600">{s.class}</TableCell>
+                          <TableCell className="text-[13px] text-slate-700 font-medium">₹{TUITION_BY_CLASS[s.class].toLocaleString()}</TableCell>
+                          {MONTH_KEYS.map(mk=>{
+                            const p=rec.payments[mk];
+                            const isFuture=new Date(mk+"-01")>new Date();
+                            return (
+                              <TableCell key={mk} className="text-center px-1">
+                                {isFuture?(
+                                  <span className="text-[10px] text-slate-300">—</span>
+                                ):p?(
+                                  <span title={`${p.method} · ${p.date}`} className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700">
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8"><polyline points="2,5 4.2,7.5 8,2.5"/></svg>
+                                  </span>
+                                ):(
+                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-50 text-red-400">
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8"><line x1="2" y1="2" x2="8" y2="8"/><line x1="8" y1="2" x2="2" y2="8"/></svg>
+                                  </span>
                                 )}
                               </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* ── MONTHLY TUITION ── */}
-            <TabsContent value="tuition" className="mt-0">
-              <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-4 gap-4">
-                  <StatCard label="Tuition Collected" value={`₹${(totalTuitionCollected/1000).toFixed(1)}K`} accent />
-                  <StatCard label="Students Overdue"  value={overdueTuition} />
-                  <StatCard label="Session"           value="2025–26" />
-                  <StatCard label="Monthly Target"    value={`₹${(STUDENTS.reduce((a,s)=>a+TUITION_BY_CLASS[s.class],0)/1000).toFixed(1)}K`} />
-                </div>
-                <Card className="shadow-none border-slate-200 overflow-x-auto pt-0">
-                  <CardContent className="p-0">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-slate-50 hover:bg-slate-50">
-                          <TableHead className="pl-6 text-[11px] font-semibold uppercase text-slate-500 sticky left-0 bg-slate-50 z-10 min-w-[160px]">Student</TableHead>
-                          <TableHead className="text-[11px] font-semibold uppercase text-slate-500 min-w-[80px]">Class</TableHead>
-                          <TableHead className="text-[11px] font-semibold uppercase text-slate-500 min-w-[70px]">Monthly</TableHead>
-                          {MONTHS.map(m=>(
-                            <TableHead key={m} className="text-[11px] font-semibold uppercase text-slate-500 text-center min-w-[54px]">{m}</TableHead>
-                          ))}
-                          <TableHead className="text-[11px] font-semibold uppercase text-slate-500 pr-4 min-w-[80px]">Action</TableHead>
+                            );
+                          })}
+                          <TableCell className="pr-4">
+                            {unpaidMonths.length>0&&(
+                              <RecordPaymentPopover
+                                trigger={<Button size="sm" variant="outline" className="h-7 text-[11px] border-[#007BFF] text-[#007BFF] hover:bg-blue-50 whitespace-nowrap">Pay ({unpaidMonths.length})</Button>}
+                                studentName={s.name}
+                                feeType={`Tuition – ${unpaidMonths.length} month${unpaidMonths.length>1?"s":""}`}
+                                totalAmount={TUITION_BY_CLASS[s.class]*unpaidMonths.length}
+                                currentPaid={0}
+                                onRecord={(amt,method,date)=>{
+                                  let remaining=amt;
+                                  for(const mk of unpaidMonths){
+                                    if(remaining<=0) break;
+                                    const mAmt=Math.min(TUITION_BY_CLASS[s.class],remaining);
+                                    recordMonthlyPayment(s.id,mk,mAmt,method,date);
+                                    remaining-=mAmt;
+                                  }
+                                }}
+                              />
+                            )}
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredStudents.map(s=>{
-                          const rec=monthlyData[s.id]??{studentId:s.id,payments:{}};
-                          const unpaidMonths=getUnpaidMonths(s.id);
-                          return (
-                            <TableRow key={s.id} className="hover:bg-slate-50 border-slate-100">
-                              <TableCell className="pl-6 sticky left-0 bg-white z-10">
-                                <p className="text-[13px] font-medium text-slate-900">{s.name}</p>
-                                <p className="text-[11px] text-slate-400">{s.rollNo}</p>
-                              </TableCell>
-                              <TableCell className="text-[13px] text-slate-600">{s.class}</TableCell>
-                              <TableCell className="text-[13px] text-slate-700 font-medium">₹{TUITION_BY_CLASS[s.class].toLocaleString()}</TableCell>
-                              {MONTH_KEYS.map(mk=>{
-                                const p=rec.payments[mk];
-                                const isFuture=new Date(mk+"-01")>new Date();
-                                return (
-                                  <TableCell key={mk} className="text-center px-1">
-                                    {isFuture?(
-                                      <span className="text-[10px] text-slate-300">—</span>
-                                    ):p?(
-                                      <span title={`${p.method} · ${p.date}`} className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700">
-                                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8"><polyline points="2,5 4.2,7.5 8,2.5"/></svg>
-                                      </span>
-                                    ):(
-                                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-50 text-red-400">
-                                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8"><line x1="2" y1="2" x2="8" y2="8"/><line x1="8" y1="2" x2="2" y2="8"/></svg>
-                                      </span>
-                                    )}
-                                  </TableCell>
-                                );
-                              })}
-                              <TableCell className="pr-4">
-                                {unpaidMonths.length>0&&(
-                                  <RecordPaymentPopover
-                                    trigger={<Button size="sm" variant="outline" className="h-7 text-[11px] border-[#007BFF] text-[#007BFF] hover:bg-blue-50 whitespace-nowrap">Pay ({unpaidMonths.length})</Button>}
-                                    studentName={s.name}
-                                    feeType={`Tuition – ${unpaidMonths.length} month${unpaidMonths.length>1?"s":""}`}
-                                    totalAmount={TUITION_BY_CLASS[s.class]*unpaidMonths.length}
-                                    currentPaid={0}
-                                    onRecord={(amt,method,date)=>{
-                                      let remaining=amt;
-                                      for(const mk of unpaidMonths){
-                                        if(remaining<=0) break;
-                                        const mAmt=Math.min(TUITION_BY_CLASS[s.class],remaining);
-                                        recordMonthlyPayment(s.id,mk,mAmt,method,date);
-                                        remaining-=mAmt;
-                                      }
-                                    }}
-                                  />
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* ── BOOKS ── */}
-            <TabsContent value="books" className="mt-0">
-              <ItemFeeTab label="Books" type="Books" items={filteredItemFees("Books")}
-                students={STUDENTS} statusFilter={statusFilter} setStatusFilter={setStatusFilter}
-                onRecord={(sid,amt,method,date)=>recordItemPayment(sid,"Books",amt,method,date)} />
-            </TabsContent>
-
-            {/* ── UNIFORMS ── */}
-            <TabsContent value="uniforms" className="mt-0">
-              <ItemFeeTab label="Uniforms" type="Uniform" items={filteredItemFees("Uniform")}
-                students={STUDENTS} statusFilter={statusFilter} setStatusFilter={setStatusFilter}
-                onRecord={(sid,amt,method,date)=>recordItemPayment(sid,"Uniform",amt,method,date)} />
-            </TabsContent>
-          </Tabs>
-        </main>
-      </div>
-    </div>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        {/* ── BOOKS ── */}
+        <TabsContent value="books" className="mt-0">
+          <ItemFeeTab label="Books" type="Books" items={filteredItemFees("Books")}
+            students={STUDENTS} statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+            onRecord={(sid,amt,method,date)=>recordItemPayment(sid,"Books",amt,method,date)} />
+        </TabsContent>
+        {/* ── UNIFORMS ── */}
+        <TabsContent value="uniforms" className="mt-0">
+          <ItemFeeTab label="Uniforms" type="Uniform" items={filteredItemFees("Uniform")}
+            students={STUDENTS} statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+            onRecord={(sid,amt,method,date)=>recordItemPayment(sid,"Uniform",amt,method,date)} />
+        </TabsContent>
+      </Tabs>
+    </>
   );
 }
 

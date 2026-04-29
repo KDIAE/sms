@@ -6,8 +6,6 @@ import {
   faPlus, faChalkboardTeacher, faUsers, faBookOpen,
   faGraduationCap, faCheck, faPencil, faTrash,
 } from "@fortawesome/free-solid-svg-icons";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -245,52 +243,38 @@ export default function ClassesPage() {
   const allSubjects   = Array.from(new Set(CLASSES_DATA.flatMap((c) => c.subjects)));
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f8fafc]">
-      <Sidebar />
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar title="Classes & Subjects" description="Manage class groups, sections, and subject assignments" />
-
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="flex flex-col gap-6">
-
-            {/* Stat cards */}
-            <div className="grid grid-cols-4 gap-4">
-              <StatCard icon={faGraduationCap}     label="Total Classes"    value={CLASSES_DATA.length} />
-              <StatCard icon={faUsers}             label="Total Sections"   value={totalSections} />
-              <StatCard icon={faChalkboardTeacher} label="Total Students"   value={totalStudents} />
-              <StatCard icon={faBookOpen}           label="Subjects Offered" value={allSubjects.length} />
-            </div>
-
-            {/* Table header */}
-            <div className="flex items-center justify-between">
-              <h2 className="text-[14px] font-semibold text-slate-800">All Classes</h2>
-              <Button size="sm" className="bg-[#007BFF] hover:bg-[#0069d9] text-white text-[13px] h-8 gap-1.5"
-                onClick={() => setShowDialog(true)}>
-                <FontAwesomeIcon icon={faPlus} className="text-[11px]" />
-                Add Class
-              </Button>
-            </div>
-
-            {/* Column headers */}
-            <div className="flex items-center px-5 gap-4 text-[10px] font-semibold text-slate-400 uppercase tracking-wide -mb-3">
-              <span className="min-w-[160px]">Class / Teacher</span>
-              <span className="flex-1">Sections & Subjects</span>
-              <span className="w-24 text-right pr-1">Students</span>
-            </div>
-
-            {/* Class list */}
-            <div className="flex flex-col gap-2">
-              {CLASSES_DATA.map((cls) => (
-                <ClassCard key={cls.id} cls={cls} />
-              ))}
-            </div>
-
-          </div>
-        </main>
+    <>
+      <div className="flex flex-col gap-6">
+        {/* Stat cards */}
+        <div className="grid grid-cols-4 gap-4">
+          <StatCard icon={faGraduationCap}     label="Total Classes"    value={CLASSES_DATA.length} />
+          <StatCard icon={faUsers}             label="Total Sections"   value={totalSections} />
+          <StatCard icon={faChalkboardTeacher} label="Total Students"   value={totalStudents} />
+          <StatCard icon={faBookOpen}           label="Subjects Offered" value={allSubjects.length} />
+        </div>
+        {/* Table header */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-[14px] font-semibold text-slate-800">All Classes</h2>
+          <Button size="sm" className="bg-[#007BFF] hover:bg-[#0069d9] text-white text-[13px] h-8 gap-1.5"
+            onClick={() => setShowDialog(true)}>
+            <FontAwesomeIcon icon={faPlus} className="text-[11px]" />
+            Add Class
+          </Button>
+        </div>
+        {/* Column headers */}
+        <div className="flex items-center px-5 gap-4 text-[10px] font-semibold text-slate-400 uppercase tracking-wide -mb-3">
+          <span className="min-w-[160px]">Class / Teacher</span>
+          <span className="flex-1">Sections & Subjects</span>
+          <span className="w-24 text-right pr-1">Students</span>
+        </div>
+        {/* Class list */}
+        <div className="flex flex-col gap-2">
+          {CLASSES_DATA.map((cls) => (
+            <ClassCard key={cls.id} cls={cls} />
+          ))}
+        </div>
       </div>
-
       <AddClassDialog open={showDialog} onClose={() => setShowDialog(false)} />
-    </div>
+    </>
   );
 }

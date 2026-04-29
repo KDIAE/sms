@@ -128,3 +128,8 @@
     @apply font-sans;
   }
 }
+
+/* Hide the reCAPTCHA floating badge — disclosure shown inline in the form */
+.grecaptcha-badge {
+  visibility: hidden !important;
+}

@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Sidebar from "@/components/Sidebar";
-import Navbar from "@/components/Navbar";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -252,84 +250,74 @@ export default function TimetablePage() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f8fafc]">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar title="Timetable" description="Weekly class schedule" />
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-6 flex flex-col gap-4">
-            <Tabs defaultValue="week" className="gap-0">
-              {/* Controls row */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3 flex-wrap">
+    <>
+      <div className="flex flex-col gap-4">
+        <Tabs defaultValue="week" className="gap-0">
+          {/* Controls row */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <TabsList>
+                <TabsTrigger value="week">Week</TabsTrigger>
+                <TabsTrigger value="day">Day</TabsTrigger>
+              </TabsList>
+              {/* Day selector shown in day tab */}
+              <TabsContent value="day" className="mt-0 flex-none">
+                <Tabs value={activeDay} onValueChange={setActiveDay}>
                   <TabsList>
-                    <TabsTrigger value="week">Week</TabsTrigger>
-                    <TabsTrigger value="day">Day</TabsTrigger>
+                    {DAYS.map((d, i) => {
+                      const isToday = d === todayName;
+                      const isActive = d === activeDay;
+                      return (
+                        <TabsTrigger
+                          key={d}
+                          value={d}
+                          className={!isActive && isToday ? "text-[#007BFF] font-semibold" : ""}
+                        >
+                          <span className="flex items-center gap-1">
+                            {DAY_SHORT[i]}
+                            {isToday && !isActive && (
+                              <span className="w-1 h-1 rounded-full bg-[#007BFF] inline-block" />
+                            )}
+                          </span>
+                        </TabsTrigger>
+                      );
+                    })}
                   </TabsList>
-
-                  {/* Day selector shown in day tab */}
-                  <TabsContent value="day" className="mt-0 flex-none">
-                    <Tabs value={activeDay} onValueChange={setActiveDay}>
-                      <TabsList>
-                        {DAYS.map((d, i) => {
-                          const isToday = d === todayName;
-                          const isActive = d === activeDay;
-                          return (
-                            <TabsTrigger
-                              key={d}
-                              value={d}
-                              className={!isActive && isToday ? "text-[#007BFF] font-semibold" : ""}
-                            >
-                              <span className="flex items-center gap-1">
-                                {DAY_SHORT[i]}
-                                {isToday && !isActive && (
-                                  <span className="w-1 h-1 rounded-full bg-[#007BFF] inline-block" />
-                                )}
-                              </span>
-                            </TabsTrigger>
-                          );
-                        })}
-                      </TabsList>
-                    </Tabs>
-                  </TabsContent>
+                </Tabs>
+              </TabsContent>
+            </div>
+            <div className="flex items-center gap-2">
+              {dragState && (
+                <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 text-[12px] text-amber-700 font-medium animate-pulse">
+                  <span>Dragging: {dragState.slot.subject}</span>
+                  <span className="opacity-60">→ drop to swap</span>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  {dragState && (
-                    <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 text-[12px] text-amber-700 font-medium animate-pulse">
-                      <span>Dragging: {dragState.slot.subject}</span>
-                      <span className="opacity-60">→ drop to swap</span>
-                    </div>
-                  )}
-                  <Select value={selectedClass} onValueChange={setSelectedClass}>
-                    <SelectTrigger className="w-36 bg-white border-slate-200 text-[13px] h-8">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CLASSES.map(c => (
-                        <SelectItem key={c} value={c} className="text-[13px]">{c}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Timetable card */}
-              <Card className="shadow-none border-slate-200 overflow-hidden">
-                <TimeRuler simMins={simMins} />
-
-                <TabsContent value="week" className="mt-0">
-                  <WeekView {...sharedProps} days={DAYS} todayName={todayName} />
-                </TabsContent>
-                <TabsContent value="day" className="mt-0">
-                  <DayView {...sharedProps} day={activeDay} isToday={activeDay === todayName} />
-                </TabsContent>
-              </Card>
-            </Tabs>
+              )}
+              <Select value={selectedClass} onValueChange={setSelectedClass}>
+                <SelectTrigger className="w-36 bg-white border-slate-200 text-[13px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CLASSES.map(c => (
+                    <SelectItem key={c} value={c} className="text-[13px]">{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </main>
+          {/* Timetable card */}
+          <Card className="shadow-none border-slate-200 overflow-hidden">
+            <TimeRuler simMins={simMins} />
+            <TabsContent value="week" className="mt-0">
+              <WeekView {...sharedProps} days={DAYS} todayName={todayName} />
+            </TabsContent>
+            <TabsContent value="day" className="mt-0">
+              <DayView {...sharedProps} day={activeDay} isToday={activeDay === todayName} />
+            </TabsContent>
+          </Card>
+        </Tabs>
       </div>
-    </div>
+    </>
   );
 }
 
