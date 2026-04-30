@@ -4,6 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,6 +26,7 @@ declare global {
 
 export default function LoginPage() {
   const router = useRouter();
+  const auth = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
@@ -47,6 +49,7 @@ export default function LoginPage() {
 
         const res = await fetch(`${API_URL}/api/auth/login`, {
           method: "POST",
+          credentials: "include",   // allows backend to set HttpOnly cookie
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email,
@@ -63,10 +66,8 @@ export default function LoginPage() {
           return;
         }
 
-        // Store JWT and user info
-        localStorage.setItem("sms_token", data.access_token);
-        localStorage.setItem("sms_refresh_token", data.refresh_token);
-        localStorage.setItem("sms_user", JSON.stringify(data.user));
+        // Store access token in memory via context; refresh token is in HttpOnly cookie
+        auth.login(data.access_token, data.user);
 
         router.push("/");
       } catch {
