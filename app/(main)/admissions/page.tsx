@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faMagnifyingGlass, faPlus, faChevronDown, faChevronUp, faXmark,
@@ -50,7 +50,12 @@ export default function AdmissionsPage() {
     }
   }, [search, statusFilter, classFilter, page]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      fetchData();
+    }, 0);
+    return () => clearTimeout(handle);
+  }, [fetchData]);
 
   const allClassOptions = classesList.length > 0 ? classesList : CLASS_LIST;
 
@@ -64,15 +69,15 @@ export default function AdmissionsPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 md:gap-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-[22px] font-bold text-slate-900">Admissions</h1>
+          <h1 className="text-[20px] sm:text-[22px] font-bold text-slate-900">Admissions</h1>
           <p className="text-[13px] text-slate-500 mt-0.5">Manage applications and enrol new students</p>
         </div>
-        <Button size="sm" className="bg-[#007BFF] hover:bg-[#0069d9] text-[13px] h-8 px-4 gap-2"
+        <Button size="sm" className="bg-[#007BFF] hover:bg-[#0069d9] text-[13px] h-9 sm:h-8 px-4 gap-2 w-full sm:w-auto"
           onClick={() => setWizardOpen(true)}>
           <FontAwesomeIcon icon={faPlus} />
           New Application
@@ -80,14 +85,14 @@ export default function AdmissionsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
         {statCards.map((c) => (
           <Card key={c.label}
             className="border-slate-100 shadow-none cursor-pointer hover:border-slate-300 transition-colors"
             onClick={() => setStatusFilter(statusFilter === c.label || c.label === "Total" ? "" : c.label)}>
             <CardContent className="px-4 py-3">
               <p className="text-[11px] font-semibold text-slate-500 uppercase mb-1">{c.label}</p>
-              <p className={`text-[24px] font-bold ${c.color}`}>{c.value}</p>
+              <p className={`text-[20px] sm:text-[24px] font-bold ${c.color}`}>{c.value}</p>
             </CardContent>
           </Card>
         ))}
@@ -95,20 +100,20 @@ export default function AdmissionsPage() {
 
       {/* Table */}
       <Card className="border-slate-100 shadow-none py-0 gap-0">
-        <CardHeader className="p-4 border-b border-slate-100 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <CardHeader className="p-4 border-b border-slate-100 flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-[14px] font-semibold text-slate-800">
             Applications
             <span className="ml-2 text-[12px] font-normal text-slate-500">({apps.length} showing)</span>
           </CardTitle>
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="relative flex-1 min-w-[200px]">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:flex-1 sm:min-w-[220px]">
               <FontAwesomeIcon icon={faMagnifyingGlass} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[12px]" />
               <Input placeholder="Search by name, code or phone…" className="pl-8 h-8 text-[13px] bg-slate-50 border-slate-200"
                 value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
 
             <Select value={statusFilter || "__all__"} onValueChange={(v) => setStatusFilter(v === "__all__" ? "" : v)}>
-              <SelectTrigger className="h-8 text-[13px] border-slate-200 bg-slate-50 w-[160px]">
+              <SelectTrigger className="h-8 text-[13px] border-slate-200 bg-slate-50 w-full sm:w-[160px]">
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
@@ -118,7 +123,7 @@ export default function AdmissionsPage() {
             </Select>
 
             <Select value={classFilter || "__all__"} onValueChange={(v) => setClassFilter(v === "__all__" ? "" : v)}>
-              <SelectTrigger className="h-8 text-[13px] border-slate-200 bg-slate-50 w-[160px]">
+              <SelectTrigger className="h-8 text-[13px] border-slate-200 bg-slate-50 w-full sm:w-[160px]">
                 <SelectValue placeholder="All Classes" />
               </SelectTrigger>
               <SelectContent>
@@ -128,7 +133,7 @@ export default function AdmissionsPage() {
             </Select>
 
             {(statusFilter || classFilter || search) && (
-              <Button variant="ghost" size="sm" className="h-8 text-[12px] text-slate-500"
+              <Button variant="ghost" size="sm" className="h-8 text-[12px] text-slate-500 justify-start sm:justify-center"
                 onClick={() => { setSearch(""); setStatusFilter(""); setClassFilter(""); }}>
                 <FontAwesomeIcon icon={faXmark} className="mr-1" /> Clear
               </Button>
@@ -136,7 +141,74 @@ export default function AdmissionsPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
+          <div className="md:hidden p-3 space-y-3">
+            {loading && Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="border-slate-100 shadow-none">
+                <CardContent className="p-3 space-y-2.5">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3.5 w-32" />
+                  <Skeleton className="h-5 w-24 rounded-full" />
+                </CardContent>
+              </Card>
+            ))}
+
+            {!loading && apps.length === 0 && (
+              <div className="text-center py-8 text-slate-400 text-[13px]">No applications found.</div>
+            )}
+
+            {!loading && apps.map((a) => {
+              const isOpen = expandedId === a.id;
+              return (
+                <div key={a.id} className="rounded-lg border border-slate-100 bg-white overflow-hidden">
+                  <button
+                    type="button"
+                    className="w-full p-3 text-left"
+                    onClick={() => setExpandedId(isOpen ? null : a.id)}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-slate-400 font-mono truncate">{a.application_code}</p>
+                        <p className="text-[14px] font-semibold text-slate-900 truncate mt-0.5">{a.applicant_name}</p>
+                      </div>
+                      <FontAwesomeIcon icon={isOpen ? faChevronUp : faChevronDown} className="text-slate-400 text-[11px] mt-1" />
+                    </div>
+                    <div className="mt-2 flex flex-col gap-1.5 text-[12px] text-slate-600">
+                      <p>
+                        {a.applying_for_class}{a.section_preference ? ` – ${a.section_preference}` : ""}
+                        {a.academic_year ? <span className="ml-1 text-[11px] text-slate-400">({a.academic_year})</span> : null}
+                      </p>
+                      <p>{a.guardian?.phone || a.phone || "—"}</p>
+                      <p className="text-slate-500">{a.applied_date ? format(new Date(a.applied_date), "dd MMM yyyy") : "—"}</p>
+                      <div className="pt-0.5"><StatusBadge status={a.status} /></div>
+                    </div>
+                  </button>
+
+                  {isOpen && (
+                    <AdmissionExpandPanel
+                      key={`exp-mobile-${a.id}`}
+                      mobile
+                      app={a}
+                      classesList={allClassOptions}
+                      onSaved={(updated) => {
+                        setApps((prev) => prev.map((x) => x.id === updated.id ? updated : x));
+                        fetchData();
+                      }}
+                      onDeleted={(id) => {
+                        setApps((prev) => prev.filter((x) => x.id !== id));
+                        setExpandedId(null);
+                        fetchData();
+                      }}
+                      onEnrolled={() => { fetchData(); setExpandedId(null); }}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="hidden md:block">
+            <Table>
             <TableHeader>
               <TableRow className="border-slate-100 bg-slate-50/60">
                 <TableHead className="text-[11px] font-semibold text-slate-500 pl-6 w-[100px]">Code</TableHead>
@@ -170,7 +242,7 @@ export default function AdmissionsPage() {
               {!loading && apps.map((a) => {
                 const isOpen = expandedId === a.id;
                 return (
-                  <>
+                  <Fragment key={a.id}>
                     <TableRow key={a.id}
                       className="hover:bg-slate-50 border-slate-100 cursor-pointer select-none"
                       onClick={() => setExpandedId(isOpen ? null : a.id)}>
@@ -209,11 +281,12 @@ export default function AdmissionsPage() {
                         onEnrolled={() => { fetchData(); setExpandedId(null); }}
                       />
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

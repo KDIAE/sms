@@ -17,13 +17,14 @@ import { BLOOD_GROUPS, ID_TYPES, RELATIONS, FEE_STATUS, SECTIONS } from "@/compo
 import { EARLY_CLASSES, CLASS_LIST, ACADEMIC_YEARS, ALL_STATUSES } from "./constants";
 
 export function AdmissionExpandPanel({
-  app, classesList, onSaved, onDeleted, onEnrolled,
+  app, classesList, onSaved, onDeleted, onEnrolled, mobile = false,
 }: {
   app: Admission;
   classesList: string[];
   onSaved: (updated: Admission) => void;
   onDeleted: (id: string) => void;
   onEnrolled: () => void;
+  mobile?: boolean;
 }) {
   const [draft, setDraft] = useState<Admission>({ ...app });
   const [saving, setSaving] = useState(false);
@@ -31,7 +32,14 @@ export function AdmissionExpandPanel({
   const [error, setError] = useState("");
   const [enrollMsg, setEnrollMsg] = useState("");
 
-  useEffect(() => { setDraft({ ...app }); setError(""); setEnrollMsg(""); }, [app]);
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setDraft({ ...app });
+      setError("");
+      setEnrollMsg("");
+    }, 0);
+    return () => clearTimeout(handle);
+  }, [app]);
 
   const set = (f: string, v: string) => setDraft((p) => ({ ...p, [f]: v }));
   const setG = (f: string, v: string) => setDraft((p) => ({ ...p, guardian: { ...p.guardian, [f]: v } }));
@@ -43,7 +51,7 @@ export function AdmissionExpandPanel({
   const handleSave = async () => {
     setSaving(true); setError("");
     try {
-      const { id, application_code, ...rest } = draft;
+      const { id, ...rest } = draft;
       const updated = await admissionsApi.update(id, rest);
       onSaved(updated);
     } catch (e: unknown) {
@@ -77,18 +85,16 @@ export function AdmissionExpandPanel({
     }
   };
 
-  return (
-    <TableRow className="bg-slate-50/80 border-slate-100">
-      <TableCell colSpan={7} className="px-6 py-5">
-        <div className="flex flex-col gap-5" onClick={(e) => e.stopPropagation()}>
+  const content = (
+    <div className="flex flex-col gap-5" onClick={(e) => e.stopPropagation()}>
 
           {/* Applicant Information */}
           <div>
             <p className="text-[11px] font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
               <FontAwesomeIcon icon={faUser} className="text-[#007BFF]" /> Applicant Information
             </p>
-            <div className="grid grid-cols-4 gap-3">
-              <div className="col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+              <div className="xl:col-span-2">
                 <LField label="Full Name" field="applicant_name" value={draft.applicant_name} onChange={set} />
               </div>
               <LDatePicker label="Date of Birth"      field="dob"                value={draft.dob}                onChange={set} />
@@ -99,7 +105,7 @@ export function AdmissionExpandPanel({
               <LSelect     label="Academic Year"      field="academic_year"      value={draft.academic_year}      options={ACADEMIC_YEARS} onChange={set} />
               <LField      label="Phone"              field="phone" type="tel"              value={draft.phone}              onChange={set} />
               <LField      label="Email"              field="email" type="email"              value={draft.email}              onChange={set} />
-              <div className="col-span-4">
+              <div className="sm:col-span-2 xl:col-span-4">
                 <label className="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Address</label>
                 <Input value={draft.address} onChange={(e) => set("address", e.target.value)}
                   className="h-8 text-[12px] bg-white border-slate-200" />
@@ -114,17 +120,17 @@ export function AdmissionExpandPanel({
             <p className="text-[11px] font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
               <FontAwesomeIcon icon={faFileLines} className="text-[#007BFF]" /> Documents
             </p>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
               {!isEarly ? (
                 <>
-                  <div className="col-span-2">
+                  <div className="sm:col-span-2 xl:col-span-2">
                     <LField label="Previous School" field="previous_school" value={draft.previous_school} onChange={set} />
                   </div>
                   <LField label="TC Number" field="tc_number" value={draft.tc_number} onChange={set} />
                   <LField label="CC Number" field="cc_number" value={draft.cc_number} onChange={set} />
                 </>
               ) : (
-                <div className="col-span-4 rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2 text-[12px] text-emerald-700">
+                <div className="sm:col-span-2 xl:col-span-4 rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2 text-[12px] text-emerald-700">
                   Early-childhood class — TC &amp; CC not required.
                 </div>
               )}
@@ -140,7 +146,7 @@ export function AdmissionExpandPanel({
             <p className="text-[11px] font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
               <FontAwesomeIcon icon={faUsers} className="text-[#007BFF]" /> Guardian
             </p>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
               <LField  label="Name"       field="name"       value={draft.guardian.name}       onChange={(_, v) => setG("name", v)} />
               <LSelect label="Relation"   field="relation"   value={draft.guardian.relation}   options={RELATIONS} onChange={(_, v) => setG("relation", v)} />
               <LField  label="Phone"      field="phone" type="tel"      value={draft.guardian.phone}      onChange={(_, v) => setG("phone", v)} />
@@ -148,7 +154,7 @@ export function AdmissionExpandPanel({
               <LField  label="Occupation" field="occupation" value={draft.guardian.occupation} onChange={(_, v) => setG("occupation", v)} />
               <LSelect label="ID Type"    field="id_type"    value={draft.guardian.id_type}    options={ID_TYPES} onChange={(_, v) => setG("id_type", v)} />
               <LField  label="ID Number"  field="id_number"  value={draft.guardian.id_number}  onChange={(_, v) => setG("id_number", v)} />
-              <div className="col-span-1">
+              <div className="sm:col-span-2 xl:col-span-1">
                 <LField label="Guardian Address" field="address" value={draft.guardian.address} onChange={(_, v) => setG("address", v)} />
               </div>
             </div>
@@ -159,7 +165,7 @@ export function AdmissionExpandPanel({
           {/* Fees */}
           <div>
             <p className="text-[11px] font-bold text-slate-400 uppercase mb-3">Fee Structure</p>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
               <LField  label="Tuition Fee (₹/mo)"    field="tuition_fee"        value={String(draft.fees.tuition_fee)}        onChange={(_, v) => setFees("tuition_fee", Number(v))} />
               <LField  label="Concession (₹)"        field="concession_amount"  value={String(draft.fees.concession_amount)}  onChange={(_, v) => setFees("concession_amount", Number(v))} />
               <LField  label="Concession Reason"     field="concession_reason"  value={draft.fees.concession_reason}         onChange={(_, v) => setFees("concession_reason", v)} />
@@ -173,9 +179,9 @@ export function AdmissionExpandPanel({
           <Separator />
 
           {/* Status & Remarks */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             <LSelect label="Application Status" field="status" value={draft.status} options={ALL_STATUSES} onChange={set} />
-            <div className="col-span-3">
+            <div className="sm:col-span-2 xl:col-span-3">
               <label className="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Remarks / Notes</label>
               <Input value={draft.remarks} onChange={(e) => set("remarks", e.target.value)}
                 className="h-8 text-[12px] bg-white border-slate-200" />
@@ -186,17 +192,17 @@ export function AdmissionExpandPanel({
           {enrollMsg && <p className="text-[12px] text-emerald-600 font-semibold">{enrollMsg}</p>}
 
           {/* Action bar */}
-          <div className="flex items-center justify-between pt-1">
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 pt-1">
             <Button variant="ghost" size="sm"
-              className="text-red-500 hover:text-red-700 hover:bg-red-50 text-[12px] h-7"
+              className="text-red-500 hover:text-red-700 hover:bg-red-50 text-[12px] h-8 sm:h-7 w-full sm:w-auto"
               onClick={handleDelete}>
               <FontAwesomeIcon icon={faTrash} className="mr-1.5" />
               Delete Application
             </Button>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-1 sm:flex gap-2 w-full sm:w-auto">
               {(draft.status === "Approved" || draft.status === "Pending" || draft.status === "Under Review") && (
                 <Button size="sm" variant="outline"
-                  className="text-[12px] h-7 border-violet-300 text-violet-700 hover:bg-violet-50"
+                  className="text-[12px] h-8 sm:h-7 border-violet-300 text-violet-700 hover:bg-violet-50 w-full sm:w-auto"
                   onClick={handleEnroll} disabled={enrolling}>
                   {enrolling
                     ? <FontAwesomeIcon icon={faSpinner} className="animate-spin mr-1.5" />
@@ -204,7 +210,7 @@ export function AdmissionExpandPanel({
                   Enroll as Student
                 </Button>
               )}
-              <Button size="sm" className="text-[12px] h-7 bg-[#007BFF] hover:bg-[#0069d9]"
+              <Button size="sm" className="text-[12px] h-8 sm:h-7 bg-[#007BFF] hover:bg-[#0069d9] w-full sm:w-auto"
                 onClick={handleSave} disabled={saving}>
                 {saving ? <FontAwesomeIcon icon={faSpinner} className="animate-spin mr-1.5" /> : null}
                 Save Changes
@@ -212,7 +218,17 @@ export function AdmissionExpandPanel({
             </div>
           </div>
 
-        </div>
+    </div>
+  );
+
+  if (mobile) {
+    return <div className="border-t border-slate-100 p-3 bg-slate-50/70">{content}</div>;
+  }
+
+  return (
+    <TableRow className="bg-slate-50/80 border-slate-100">
+      <TableCell colSpan={7} className="px-6 py-5">
+        {content}
       </TableCell>
     </TableRow>
   );
