@@ -45,11 +45,11 @@ export default function Navbar({ title: titleProp, description: descProp }: Navb
   const [searchFocused, setSearchFocused] = useState(false);
 
   return (
-    <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 sticky top-0 z-30">
-      <div>
-        <h1 className="text-sm font-semibold text-[#212529] leading-tight">{title}</h1>
+    <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-6 shrink-0 sticky top-0 z-30">
+      <div className="min-w-0 pr-2">
+        <h1 className="text-[13px] md:text-sm font-semibold text-[#212529] leading-tight truncate">{title}</h1>
         {description && (
-          <p className="text-[11px] text-slate-400 leading-tight mt-0.5">{description}</p>
+          <p className="hidden md:block text-[11px] text-slate-400 leading-tight mt-0.5">{description}</p>
         )}
       </div>
 
