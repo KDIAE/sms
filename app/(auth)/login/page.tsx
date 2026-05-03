@@ -32,6 +32,12 @@ export default function LoginPage() {
   const [error, setError] = React.useState("");
   const [loading, setLoading] = React.useState(false);
 
+  React.useEffect(() => {
+    if (auth.initialized && auth.accessToken) {
+      router.replace("/");
+    }
+  }, [auth.initialized, auth.accessToken, router]);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
