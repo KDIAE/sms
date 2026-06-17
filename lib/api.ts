@@ -914,3 +914,103 @@ export const settingsApi = {
     });
   },
 };
+
+// ── SMS Fee Management ────────────────────────────────────────────────────────
+
+export interface SmsAdmissionFeeRow {
+  student_id: string;
+  name: string;
+  roll_no: string;
+  class_name: string;
+  section: string;
+  total: number;
+  paid: number;
+  status: string;
+  last_payment_date: string | null;
+  last_payment_method: string | null;
+  receipt_no: string | null;
+}
+
+export interface SmsTuitionPayment {
+  amount: number;
+  method: string;
+  date: string;
+}
+
+export interface SmsTuitionRow {
+  student_id: string;
+  name: string;
+  roll_no: string;
+  class_name: string;
+  section: string;
+  monthly_amount: number;
+  payments: Record<string, SmsTuitionPayment>;
+}
+
+export interface SmsItemFeeRow {
+  student_id: string;
+  name: string;
+  roll_no: string;
+  class_name: string;
+  section: string;
+  type: string;
+  description: string;
+  total: number;
+  paid: number;
+  status: string;
+  last_payment_date: string | null;
+  last_payment_method: string | null;
+  receipt_no: string | null;
+}
+
+export interface SmsBreakdown {
+  collected: number;
+  target: number;
+}
+
+export interface SmsFeeDashboard {
+  total_collected: number;
+  admission_collected: number;
+  tuition_collected: number;
+  items_collected: number;
+  overdue_count: number;
+  session: string;
+  month_keys: string[];
+  month_labels: string[];
+  monthly_chart: Array<{ month: string; collected: number; expected: number }>;
+  breakdown_admission: SmsBreakdown;
+  breakdown_tuition: SmsBreakdown;
+  breakdown_books: SmsBreakdown;
+  breakdown_uniforms: SmsBreakdown;
+}
+
+export interface SmsFeeRecordRequest {
+  student_id: string;
+  fee_type: "Admission" | "Monthly Tuition" | "Books" | "Uniform";
+  month_key?: string;
+  amount: number;
+  method: "UPI" | "NEFT" | "Cash" | "Cheque";
+  date: string;
+}
+
+export const smsFeesApi = {
+  summary(): Promise<SmsFeeDashboard> {
+    return apiFetch<SmsFeeDashboard>("/api/fees/sms/summary");
+  },
+  admission(): Promise<SmsAdmissionFeeRow[]> {
+    return apiFetch<SmsAdmissionFeeRow[]>("/api/fees/sms/admission");
+  },
+  tuition(): Promise<SmsTuitionRow[]> {
+    return apiFetch<SmsTuitionRow[]>("/api/fees/sms/tuition");
+  },
+  items(type: "Books" | "Uniform"): Promise<SmsItemFeeRow[]> {
+    return apiFetch<SmsItemFeeRow[]>(`/api/fees/sms/items?type=${type}`);
+  },
+  record(body: SmsFeeRecordRequest): Promise<{ receipt_no: string; message: string }> {
+    return apiFetch("/api/fees/sms/record", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+};
+
