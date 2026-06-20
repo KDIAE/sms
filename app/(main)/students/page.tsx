@@ -150,7 +150,7 @@ export default function StudentsPage() {
                           <TableCell><Skeleton className="h-3.5 w-16" /></TableCell>
                           <TableCell><Skeleton className="h-5 w-14 rounded-full" /></TableCell>
                           <TableCell><Skeleton className="h-2 w-20 rounded-full" /></TableCell>
-                          <TableCell><Skeleton className="h-3.5 w-24" /></TableCell>
+                          <TableCell><Skeleton className="h-3.5 w-20" /></TableCell>
                           <TableCell><Skeleton className="h-3.5 w-20" /></TableCell>
                           <TableCell />
                         </TableRow>
@@ -202,6 +202,9 @@ export default function StudentsPage() {
                               <p className="font-medium text-slate-700">{s.guardian?.name}</p>
                               <p className="text-slate-400">{s.guardian?.relation} · {s.guardian?.phone}</p>
                             </div>
+                            {s.admission_date && (
+                              <p className="text-[11px] text-slate-400 mt-1">Admitted: {new Date(s.admission_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                            )}
                           </div>
                         </button>
 
@@ -218,6 +221,7 @@ export default function StudentsPage() {
                             mobile
                             s={s}
                             classesList={classesList}
+                            existingCodes={students.filter((x) => x.id !== s.id).map((x) => x.student_code)}
                             onClose={() => setExpandedId(null)}
                             onUpdated={handleUpdated}
                           />
@@ -238,8 +242,8 @@ export default function StudentsPage() {
                           { h: "Gender" },
                           { h: "Fee Status" },
                           { h: "Attendance" },
-                          { h: "Guardian" },
                           { h: "Phone" },
+                          { h: "Admitted" },
                           { h: "",            cls: "w-10 pr-4" },
                         ].map(({ h, cls = "" }, i) => (
                           <TableHead key={i} className={`text-[11px] font-semibold uppercase text-slate-500 ${cls}`}>{h}</TableHead>
@@ -271,11 +275,8 @@ export default function StudentsPage() {
                                   </span>
                                 </div>
                               </TableCell>
-                              <TableCell className="text-[13px] text-slate-600">
-                                <div>{s.guardian?.name}</div>
-                                <div className="text-[11px] text-slate-400">{s.guardian?.relation}</div>
-                              </TableCell>
                               <TableCell className="text-[13px] text-slate-500">{s.guardian?.phone}</TableCell>
+                              <TableCell className="text-[13px] text-slate-500">{s.admission_date ? new Date(s.admission_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</TableCell>
                               <TableCell className="pr-4 w-10" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex items-center gap-1">
                                   <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-300 hover:text-red-500"
@@ -292,6 +293,7 @@ export default function StudentsPage() {
                                 key={`${s.id}-expand`}
                                 s={s}
                                 classesList={classesList}
+                                existingCodes={students.filter((x) => x.id !== s.id).map((x) => x.student_code)}
                                 onClose={() => setExpandedId(null)}
                                 onUpdated={handleUpdated}
                               />

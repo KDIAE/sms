@@ -15,13 +15,14 @@ import { FileField } from "@/components/form/FileField";
 import { BLOOD_GROUPS, ID_TYPES, RELATIONS, FEE_STATUS, SECTIONS } from "@/components/form/constants";
 
 export function StudentExpandPanel({
-  s, onClose, classesList, onUpdated, mobile = false,
+  s, onClose, classesList, onUpdated, mobile = false, existingCodes = [],
 }: {
   s: Student;
   onClose: () => void;
   classesList: string[];
   onUpdated: (updated: Student) => void;
   mobile?: boolean;
+  existingCodes?: string[];
 }) {
   const [draft, setDraft] = useState<Student>({ ...s });
   const [saving, setSaving] = useState(false);
@@ -31,6 +32,11 @@ export function StudentExpandPanel({
   const setG   = (f: string, v: string) => setDraft((p) => ({ ...p, guardian:  { ...p.guardian,  [f]: v } }));
   const setG2  = (f: string, v: string) => setDraft((p) => ({ ...p, guardian2: { ...p.guardian2, [f]: v } }));
   const setFees = (f: string, v: string | number) => setDraft((p) => ({ ...p, fees: { ...p.fees, [f]: v } }));
+
+  const isDuplicateCode =
+    draft.student_code.trim() !== "" &&
+    draft.student_code !== s.student_code &&
+    existingCodes.includes(draft.student_code.trim());
 
   const handleSave = async () => {
     setSaving(true); setError("");
@@ -58,8 +64,9 @@ export function StudentExpandPanel({
               <div className="sm:col-span-2 xl:col-span-2">
                 <LField label="Full Name" field="name" value={draft.name} onChange={set} />
               </div>
-              <LDatePicker label="Date of Birth"  field="dob"            value={draft.dob}           onChange={set} />
-              <LField      label="Roll No."       field="roll_no"        value={draft.roll_no}       onChange={set} />
+              <LField      label="Student UID"     field="student_code"   value={draft.student_code}  onChange={set} error={isDuplicateCode ? "This UID is already taken" : undefined} />
+              <LField      label="Roll No."        field="roll_no"        value={draft.roll_no}       onChange={set} />
+              <LDatePicker label="Date of Birth"   field="dob"            value={draft.dob}           onChange={set} />
               <LSelect     label="Gender"         field="gender"         value={draft.gender}        options={["Male","Female","Other"]} onChange={set} />
               <LSelect     label="Blood Group"    field="blood_group"    value={draft.blood_group}   options={BLOOD_GROUPS} onChange={set} />
               <LSelect     label="Class"          field="class_name"     value={draft.class_name}    options={classesList} onChange={set} />

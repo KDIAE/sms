@@ -33,6 +33,7 @@ export function LField({
   onChange,
   placeholder = "",
   type = "text",
+  error: externalError,
 }: {
   label: string;
   field: string;
@@ -43,15 +44,18 @@ export function LField({
    *  "email" → email format validation on blur
    *  "text"  → no extra validation (default) */
   type?: "text" | "tel" | "email";
+  /** External error shown immediately without requiring blur */
+  error?: string;
 }) {
   const [touched, setTouched] = useState(false);
   const strVal = String(value ?? "");
 
-  let error = "";
+  let internalError = "";
   if (touched && strVal) {
-    if (type === "tel"   && digitCount(strVal) !== 10) error = TEL_ERROR;
-    if (type === "email" && !EMAIL_RE.test(strVal))    error = EMAIL_ERROR;
+    if (type === "tel"   && digitCount(strVal) !== 10) internalError = TEL_ERROR;
+    if (type === "email" && !EMAIL_RE.test(strVal))    internalError = EMAIL_ERROR;
   }
+  const displayError = externalError ?? internalError;
 
   function handleChange(raw: string) {
     onChange(field, type === "tel" ? filterTel(raw) : raw);
@@ -73,11 +77,11 @@ export function LField({
         onClick={(e) => e.stopPropagation()}
         className={[
           "h-8 text-[13px] bg-white border-slate-200",
-          error ? "!border-red-400 focus-visible:!ring-red-300" : "",
+          displayError ? "!border-red-400 focus-visible:!ring-red-300" : "",
         ].join(" ")}
       />
-      {error && (
-        <p className="text-[10px] text-red-500 mt-0.5 leading-tight">{error}</p>
+      {displayError && (
+        <p className="text-[10px] text-red-500 mt-0.5 leading-tight">{displayError}</p>
       )}
     </div>
   );
