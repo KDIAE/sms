@@ -68,6 +68,7 @@ export interface Student {
   student_id_number: string;
   fees: FeeInfo;
   attendance: number;
+  is_active: boolean;
   guardian: Guardian;
   guardian2: Guardian2;
 }
@@ -153,6 +154,7 @@ export interface StudentListParams {
   class_name?: string;
   section?: string;
   fee?: string;
+  status?: string;
   page?: number;
   limit?: number;
 }
@@ -164,6 +166,7 @@ export const studentsApi = {
     if (params.class_name) q.set("class_name", params.class_name);
     if (params.section)    q.set("section",    params.section);
     if (params.fee)        q.set("fee",        params.fee);
+    if (params.status)     q.set("status",     params.status);
     if (params.page)       q.set("page",       String(params.page));
     if (params.limit)      q.set("limit",      String(params.limit));
     return apiFetch<StudentListResponse>(`/api/students?${q}`);
@@ -184,6 +187,13 @@ export const studentsApi = {
     return apiFetch<Student>(`/api/students/${id}`, {
       method: "PUT",
       body: JSON.stringify(body),
+    });
+  },
+
+  setActive(id: string, is_active: boolean): Promise<Student> {
+    return apiFetch<Student>(`/api/students/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ is_active }),
     });
   },
 
@@ -986,11 +996,21 @@ export interface SmsFeeDashboard {
 
 export interface SmsFeeRecordRequest {
   student_id: string;
-  fee_type: "Admission" | "Monthly Tuition" | "Books" | "Uniform";
+  fee_type: "Admission" | "Registration" | "Annual" | "Monthly Tuition" | "Books" | "Uniform" | "Transport";
   month_key?: string;
   amount: number;
   method: "UPI" | "NEFT" | "Cash" | "Cheque";
   date: string;
+}
+
+export interface ClassFeeStructure {
+  class_name: string;
+  admission_fee: number;
+  registration_fee: number;
+  annual_fee: number;
+  tuition_fee: number;
+  transport_fee: number;
+  uniform_fee: number;
 }
 
 export const smsFeesApi = {
@@ -1009,6 +1029,15 @@ export const smsFeesApi = {
   record(body: SmsFeeRecordRequest): Promise<{ receipt_no: string; message: string }> {
     return apiFetch("/api/fees/sms/record", {
       method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+  getStructures(): Promise<ClassFeeStructure[]> {
+    return apiFetch<ClassFeeStructure[]>("/api/fees/sms/structure");
+  },
+  upsertStructure(className: string, body: Omit<ClassFeeStructure, "class_name">): Promise<ClassFeeStructure> {
+    return apiFetch<ClassFeeStructure>(`/api/fees/sms/structure/${encodeURIComponent(className)}`, {
+      method: "PUT",
       body: JSON.stringify(body),
     });
   },

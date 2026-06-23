@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback, Fragment } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faMagnifyingGlass, faPlus, faTrash, faChevronDown, faChevronUp,
-  faUsers,
+  faMagnifyingGlass, faPlus, faChevronDown, faChevronUp,
+  faUsers, faSort, faSortUp, faSortDown,
 } from "@fortawesome/free-solid-svg-icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { AddStudentWizard } from "@/components/students/AddStudentWizard";
 import { StudentExpandPanel } from "@/components/students/StudentExpandPanel";
 import { feeVariant } from "@/components/students/constants";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 
 export default function StudentsPage() {
   const [students, setStudents]       = useState<Student[]>([]);
@@ -24,10 +25,13 @@ export default function StudentsPage() {
   const [classesList, setClassesList] = useState<string[]>([]);
   const [loading, setLoading]         = useState(true);
   const [search, setSearch]           = useState("");
-  const [filterClass, setFilterClass] = useState("All");
-  const [filterFee, setFilterFee]     = useState("All");
+  const [filterClass, setFilterClass]             = useState("All");
+  const [filterFee, setFilterFee]                 = useState("All");
+  const [filterBloodGroup, setFilterBloodGroup]   = useState("All");
+  const [filterStatus, setFilterStatus]           = useState("active");
   const [expandedId, setExpandedId]   = useState<string | null>(null);
   const [showWizard, setShowWizard]   = useState(false);
+  const [admitSort, setAdmitSort]     = useState<"asc" | "desc" | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -37,6 +41,7 @@ export default function StudentsPage() {
           search:     search     || undefined,
           class_name: filterClass !== "All" ? filterClass : undefined,
           fee:        filterFee   !== "All" ? filterFee   : undefined,
+          status:     filterStatus,
           limit: 200,
         }),
         studentsApi.stats(),
@@ -48,7 +53,7 @@ export default function StudentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, filterClass, filterFee]);
+  }, [search, filterClass, filterFee, filterBloodGroup, filterStatus]);
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -57,18 +62,31 @@ export default function StudentsPage() {
     return () => clearTimeout(handle);
   }, [load]);
 
-  const handleDelete = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm("Delete this student? This cannot be undone.")) return;
-    await studentsApi.delete(id);
-    setStudents((p) => p.filter((s) => s.id !== id));
-    setStats((p) => ({ ...p, total: p.total - 1 }));
+  const handleToggleActive = async (s: Student, checked: boolean) => {
+    const updated = await studentsApi.setActive(s.id, checked);
+    setStudents((p) => p.map((x) => (x.id === updated.id ? updated : x)));
   };
 
   const handleUpdated = (updated: Student) =>
     setStudents((p) => p.map((s) => (s.id === updated.id ? updated : s)));
 
-  const classFilterOptions = Array.from(new Set(students.map((s) => s.class_name))).filter(Boolean).sort();
+  const isFiltered = search || filterClass !== "All" || filterFee !== "All" || filterBloodGroup !== "All" || filterStatus !== "active";
+
+  const classFilterOptions = [...classesList].sort();
+
+  const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
+  const filteredStudents = filterBloodGroup === "All" ? students : students.filter((s) => s.blood_group === filterBloodGroup);
+
+  const sortedStudents = admitSort
+    ? [...filteredStudents].sort((a, b) => {
+        const da = a.admission_date ? new Date(a.admission_date).getTime() : 0;
+        const db = b.admission_date ? new Date(b.admission_date).getTime() : 0;
+        return admitSort === "asc" ? da - db : db - da;
+      })
+    : filteredStudents;
+
+  const admitSortIcon = admitSort === "asc" ? faSortUp : admitSort === "desc" ? faSortDown : faSort;
 
   return (
     <>
@@ -82,7 +100,7 @@ export default function StudentsPage() {
             { label: "Below 75% Attendance", value: stats.low_attendance },
           ].map((st) => (
             <Card key={st.label} className="shadow-none border-slate-200">
-              <CardContent className="p-4">
+              <CardContent className="p-4 py-0">
                 <p className="text-2xl font-bold text-slate-900">{st.value}</p>
                 <p className="text-[12px] text-slate-500 mt-0.5">{st.label}</p>
               </CardContent>
@@ -94,7 +112,14 @@ export default function StudentsPage() {
         <Card className="shadow-none border-slate-200 pb-0">
           <CardHeader className="pb-0">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <CardTitle className="text-[14px] font-semibold">All Students</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-[14px] font-semibold">All Students</CardTitle>
+                {isFiltered && !loading && (
+                  <span className="text-[12px] text-slate-500 font-normal">
+                    {sortedStudents.length} student{sortedStudents.length !== 1 ? "s" : ""}
+                  </span>
+                )}
+              </div>
               <Button size="sm" className="bg-[#007BFF] hover:bg-[#0069d9] text-white text-[13px] h-9 sm:h-8 gap-2 w-full sm:w-auto"
                 onClick={() => setShowWizard(true)}>
                 <FontAwesomeIcon icon={faPlus} className="text-[11px]" /> Add Student
@@ -120,6 +145,21 @@ export default function StudentsPage() {
                   <SelectItem value="Paid">Paid</SelectItem>
                   <SelectItem value="Partial">Partial</SelectItem>
                   <SelectItem value="Unpaid">Unpaid</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterBloodGroup} onValueChange={setFilterBloodGroup}>
+                <SelectTrigger className="w-full sm:w-[130px] bg-slate-50 border-slate-200 text-[13px] h-8"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Blood Groups</SelectItem>
+                  {BLOOD_GROUPS.map((bg) => <SelectItem key={bg} value={bg}>{bg}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-full sm:w-[120px] bg-slate-50 border-slate-200 text-[13px] h-8"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -159,15 +199,15 @@ export default function StudentsPage() {
                   </Table>
                 </div>
               </>
-            ) : students.length === 0 ? (
+            ) : sortedStudents.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-2">
                 <FontAwesomeIcon icon={faUsers} className="text-3xl mb-1" />
-                <p className="text-[13px]">No students found.</p>
+                <p className="text-[13px]">{filterBloodGroup !== "All" ? `No blood group assigned to students.` : "No students found."}</p>
               </div>
             ) : (
               <>
                 <div className="md:hidden p-3 space-y-3">
-                  {students.map((s) => {
+                  {sortedStudents.map((s) => {
                     const isOpen = expandedId === s.id;
                     return (
                       <div key={s.id} className="rounded-lg border border-slate-100 bg-white overflow-hidden">
@@ -209,10 +249,12 @@ export default function StudentsPage() {
                         </button>
 
                         <div className="flex items-center justify-end gap-1 px-3 pb-3">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-500"
-                            onClick={(e) => handleDelete(s.id, e)}>
-                            <FontAwesomeIcon icon={faTrash} className="text-[12px]" />
-                          </Button>
+                          <Switch
+                            checked={s.is_active}
+                            onCheckedChange={(checked) => handleToggleActive(s, checked)}
+                            onClick={(e) => e.stopPropagation()}
+                            title={s.is_active ? "Mark as inactive" : "Mark as active"}
+                          />
                         </div>
 
                         {isOpen && (
@@ -243,15 +285,21 @@ export default function StudentsPage() {
                           { h: "Fee Status" },
                           { h: "Attendance" },
                           { h: "Phone" },
-                          { h: "Admitted" },
+                          { h: "Admitted", sortable: true },
                           { h: "",            cls: "w-10 pr-4" },
-                        ].map(({ h, cls = "" }, i) => (
-                          <TableHead key={i} className={`text-[11px] font-semibold uppercase text-slate-500 ${cls}`}>{h}</TableHead>
+                        ].map(({ h, cls = "", sortable = false }, i) => (
+                          <TableHead key={i}
+                            className={`text-[11px] font-semibold uppercase text-slate-500 ${cls} ${sortable ? "cursor-pointer select-none hover:text-slate-800" : ""}`}
+                            onClick={sortable ? () => setAdmitSort((p) => p === "asc" ? "desc" : p === "desc" ? null : "asc") : undefined}>
+                            {sortable ? (
+                              <span className="inline-flex items-center gap-1">{h} <FontAwesomeIcon icon={admitSortIcon} className="text-[10px] text-slate-400" /></span>
+                            ) : h}
+                          </TableHead>
                         ))}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {students.map((s) => {
+                      {sortedStudents.map((s) => {
                         const isOpen = expandedId === s.id;
                         return (
                           <Fragment key={s.id}>
@@ -278,13 +326,16 @@ export default function StudentsPage() {
                               <TableCell className="text-[13px] text-slate-500">{s.guardian?.phone}</TableCell>
                               <TableCell className="text-[13px] text-slate-500">{s.admission_date ? new Date(s.admission_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</TableCell>
                               <TableCell className="pr-4 w-10" onClick={(e) => e.stopPropagation()}>
-                                <div className="flex items-center gap-1">
-                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-300 hover:text-red-500"
-                                    onClick={(e) => handleDelete(s.id, e)}>
-                                    <FontAwesomeIcon icon={faTrash} className="text-[12px]" />
-                                  </Button>
+                                <div className="flex items-center gap-2">
+                                  <Switch
+                                    checked={s.is_active}
+                                    onCheckedChange={(checked) => handleToggleActive(s, checked)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="cursor-pointer"
+                                    title={s.is_active ? "Mark as inactive" : "Mark as active"}
+                                  />
                                   <FontAwesomeIcon icon={isOpen ? faChevronUp : faChevronDown}
-                                    className="text-[11px] text-slate-300 ml-1 pointer-events-none" />
+                                    className="text-[11px] text-slate-300 pointer-events-none" />
                                 </div>
                               </TableCell>
                             </TableRow>

@@ -11,6 +11,7 @@ import { LField } from "@/components/form/LField";
 import { LDatePicker } from "@/components/form/LDatePicker";
 import { LSelect } from "@/components/form/LSelect";
 import { FileField } from "@/components/form/FileField";
+import { PhotoField } from "@/components/form/PhotoField";
 import { BLOOD_GROUPS, ID_TYPES, RELATIONS, FEE_STATUS, SECTIONS } from "@/components/form/constants";
 import { StepperHeader, STEPS } from "./StepperHeader";
 import { BLANK_WIZARD, BLANK_FEES, BLANK_GUARDIAN, BLANK_GUARDIAN2 } from "./constants";
@@ -86,7 +87,7 @@ export function AddStudentWizard({
                 <textarea rows={2} className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-[13px] resize-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   placeholder="Full residential address" value={form.address} onChange={(e) => set("address", e.target.value)} />
               </div>
-              <div className="col-span-2"><FileField label="Student Photo" accept="image/*" /></div>
+              <div className="col-span-2"><PhotoField label="Student Photo" accept="image/*" /></div>
             </div>
           )}
 
