@@ -27,7 +27,7 @@ export const BLANK_WIZARD = {
   name: "", dob: "", gender: "", blood_group: "", class_name: "", section: "", roll_no: "",
   admission_date: "", phone: "", email: "", address: "",
   previous_school: "", tc_number: "", cc_number: "", student_id_type: "", student_id_number: "",
-  fees: { ...BLANK_FEES }, attendance: 100,
+  fees: { ...BLANK_FEES }, attendance: 100, is_active: true,
   guardian: { ...BLANK_GUARDIAN },
   guardian2: { ...BLANK_GUARDIAN2 },
 };
