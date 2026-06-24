@@ -22,7 +22,7 @@ export function TuitionTab({ rows, loading, monthKeys, monthLabels, onRecord }: 
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard label="Tuition Collected"  value={`₹${(totalCollected / 1000).toFixed(1)}K`} accent />
         <StatCard label="Students Overdue"   value={rows.filter(r => getUnpaidMonths(r).length > 0).length} />
         <StatCard label="Total Students"     value={rows.length} />

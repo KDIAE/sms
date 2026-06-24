@@ -16,13 +16,13 @@ export function AdmissionTab({ rows, loading, onRecord }: {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard label="Total Target"  value={`₹${(totalTarget / 1000).toFixed(0)}K`} />
         <StatCard label="Collected"     value={`₹${(totalCollected / 1000).toFixed(1)}K`} accent />
         <StatCard label="Fully Paid"    value={rows.filter(r => r.status === "Paid").length} />
         <StatCard label="Outstanding"   value={rows.filter(r => r.status !== "Paid" && r.status !== "Waived").length} />
       </div>
-      <Card className="shadow-none border-slate-200 pt-0">
+      <Card className="shadow-none border-slate-200 pt-0 overflow-x-auto">
         <CardContent className="p-0">
           {loading ? (
             <div className="text-slate-400 text-[13px] py-12 text-center">Loading…</div>

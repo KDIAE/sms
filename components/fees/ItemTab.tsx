@@ -20,13 +20,13 @@ export function ItemTab({ label, rows, loading, statusFilter, setStatusFilter, o
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard label={`${label} Collected`} value={`₹${(totalCollected / 1000).toFixed(1)}K`} accent />
         <StatCard label="Total Expected"       value={`₹${(totalExpected / 1000).toFixed(1)}K`} />
         <StatCard label="Fully Paid"           value={rows.filter(r => r.status === "Paid").length} />
         <StatCard label="Outstanding"          value={rows.filter(r => r.status !== "Paid" && r.status !== "Waived").length} />
       </div>
-      <Card className="shadow-none border-slate-200 pt-0">
+      <Card className="shadow-none border-slate-200 pt-0 overflow-x-auto">
         <div className="flex items-center gap-2 px-4 pt-4 pb-3 border-b border-slate-100">
           <span className="text-[12px] text-slate-500 font-medium">Filter:</span>
           {(["All", "Paid", "Partial", "Unpaid"] as const).map(v => (

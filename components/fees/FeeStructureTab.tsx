@@ -48,7 +48,7 @@ export function FeeStructureTab({ structures, loading, onSaved }: {
 
   return (
     <div className="flex flex-col gap-4">
-      <Card className="shadow-none border-slate-200">
+      <Card className="shadow-none border-slate-200 overflow-x-auto">
         <CardHeader className="pb-3">
           <CardTitle className="text-[14px] font-semibold">Class Fee Structure</CardTitle>
           <p className="text-[12px] text-slate-500 mt-0.5">

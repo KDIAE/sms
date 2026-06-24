@@ -35,7 +35,7 @@ export function DashboardTab({ dash, loading, onRetry }: {
   return (
     <div className="flex flex-col gap-5">
       {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <Card key={i} className="shadow-none border-slate-200 py-0">
@@ -55,9 +55,9 @@ export function DashboardTab({ dash, loading, onRetry }: {
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Bar chart card */}
-        <Card className="shadow-none border-slate-200 col-span-2">
+        <Card className="shadow-none border-slate-200 lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-[14px] font-semibold">
               {loading ? <Skeleton className="h-4 w-56" /> : `Monthly Fee Collection ${dash!.session}`}

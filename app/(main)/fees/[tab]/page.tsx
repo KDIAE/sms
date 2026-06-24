@@ -182,23 +182,25 @@ export default function FeesPage() {
       />
 
       <Tabs value={tab} onValueChange={navigateTab}>
-        <div className="flex items-center justify-between mb-5">
-          <TabsList>
-            <TabsTrigger value="dashboard"  className="text-[12px] h-6">Dashboard</TabsTrigger>
-            <TabsTrigger value="admissions" className="text-[12px] h-6">Admissions</TabsTrigger>
-            <TabsTrigger value="tuition"    className="text-[12px] h-6">Monthly Tuition</TabsTrigger>
-            <TabsTrigger value="books"      className="text-[12px] h-6">Books</TabsTrigger>
-            <TabsTrigger value="uniforms"   className="text-[12px] h-6">Uniforms</TabsTrigger>
-            <TabsTrigger value="structure"  className="text-[12px] h-6">Fee Structure</TabsTrigger>
-          </TabsList>
-          <div className="flex items-center gap-2">
-            <Button size="sm" className="h-8 text-[12px] bg-[#007BFF] hover:bg-[#0062cc]" onClick={() => setLogFeeOpen(true)}>
+        <div className="flex flex-col gap-3 mb-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <TabsList className="flex-wrap h-auto gap-0.5">
+              <TabsTrigger value="dashboard"  className="text-[12px] h-6">Dashboard</TabsTrigger>
+              <TabsTrigger value="admissions" className="text-[12px] h-6">Admissions</TabsTrigger>
+              <TabsTrigger value="tuition"    className="text-[12px] h-6">Tuition</TabsTrigger>
+              <TabsTrigger value="books"      className="text-[12px] h-6">Books</TabsTrigger>
+              <TabsTrigger value="uniforms"   className="text-[12px] h-6">Uniforms</TabsTrigger>
+              <TabsTrigger value="structure"  className="text-[12px] h-6">Fee Structure</TabsTrigger>
+            </TabsList>
+            <Button size="sm" className="h-8 text-[12px] bg-[#007BFF] hover:bg-[#0062cc] shrink-0" onClick={() => setLogFeeOpen(true)}>
               + Log Fee
             </Button>
-            <Input className="h-8 w-44 text-[12px] bg-white" placeholder="Search student…"
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input className="h-8 w-full sm:w-44 text-[12px] bg-white" placeholder="Search student…"
               value={search} onChange={e => setSearch(e.target.value)} />
             <Select value={classFilter} onValueChange={setClassFilter}>
-              <SelectTrigger className="h-8 w-32 text-[12px] bg-white"><SelectValue placeholder="Class" /></SelectTrigger>
+              <SelectTrigger className="h-8 w-full sm:w-32 text-[12px] bg-white"><SelectValue placeholder="Class" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="All" className="text-[12px]">All Classes</SelectItem>
                 {classes.map(c => <SelectItem key={c} value={c} className="text-[12px]">{c}</SelectItem>)}
