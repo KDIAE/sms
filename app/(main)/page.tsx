@@ -252,8 +252,15 @@ export default function Home() {
             </CardHeader>
             <CardContent className="flex-1 pb-0">
               {classesLoading ? (
-                <div className="flex h-[220px] items-center justify-center text-[12px] text-slate-400">
-                  Loading class distribution...
+                <div className="flex h-[220px] flex-col items-center justify-center gap-4">
+                  <div className="relative flex items-center justify-center">
+                    <div className="h-[144px] w-[144px] rounded-full bg-slate-100 animate-pulse" />
+                    <div className="absolute h-[88px] w-[88px] rounded-full bg-white" />
+                  </div>
+                  <div className="flex flex-col items-center gap-1.5">
+                    <div className="h-2.5 w-20 rounded bg-slate-100 animate-pulse" />
+                    <div className="h-2 w-14 rounded bg-slate-100 animate-pulse" />
+                  </div>
                 </div>
               ) : classesError ? (
                 <div className="flex h-[220px] items-center justify-center px-4 text-center text-[12px] text-red-500">
@@ -294,16 +301,6 @@ export default function Home() {
                 </ChartContainer>
               )}
             </CardContent>
-            {hasStudentsInDistribution && classDistribution.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 px-4 md:px-5 pb-4 pt-2">
-                {classDistribution.map((c) => (
-                  <div key={c.name} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: c.fill }} />
-                    <span className="text-[11px] text-slate-500">{c.name} ({c.value})</span>
-                  </div>
-                ))}
-              </div>
-            ) : null}
           </Card>
         </div>
         {/* Attendance + Alerts */}

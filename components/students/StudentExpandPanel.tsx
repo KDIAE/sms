@@ -13,6 +13,7 @@ import { LDatePicker } from "@/components/form/LDatePicker";
 import { LSelect } from "@/components/form/LSelect";
 import { FileField } from "@/components/form/FileField";
 import { BLOOD_GROUPS, ID_TYPES, RELATIONS, FEE_STATUS, SECTIONS } from "@/components/form/constants";
+import { useAuth } from "@/lib/auth-context";
 
 export function StudentExpandPanel({
   s, onClose, classesList, onUpdated, mobile = false, existingCodes = [],
@@ -24,6 +25,9 @@ export function StudentExpandPanel({
   mobile?: boolean;
   existingCodes?: string[];
 }) {
+  const { user } = useAuth();
+  const isPrincipal = user?.role === "principal";
+
   const [draft, setDraft] = useState<Student>({ ...s });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -74,20 +78,24 @@ export function StudentExpandPanel({
               <LField      label="Phone"          field="phone" type="tel"          value={draft.phone}         onChange={set} />
               <LField      label="Email"          field="email" type="email"          value={draft.email}         onChange={set} />
               <LDatePicker label="Admission Date" field="admission_date" value={draft.admission_date} onChange={set} />
-              <div className="sm:col-span-2 xl:col-span-4"><Separator className="my-1" /></div>
-              <p className="sm:col-span-2 xl:col-span-4 text-[11px] font-bold text-slate-400 uppercase">Fee Information</p>
-              <LField label="Tuition Fee (₹/mo)"     field="tuition_fee"        value={String(draft.fees.tuition_fee)}        onChange={(_, v) => setFees("tuition_fee", Number(v))} />
-              <LField label="Concession Amount (₹)"  field="concession_amount"  value={String(draft.fees.concession_amount)}  onChange={(_, v) => setFees("concession_amount", Number(v))} />
-              <LField label="Concession Reason"      field="concession_reason"  value={draft.fees.concession_reason}         onChange={(_, v) => setFees("concession_reason", v)} />
-              <LField label="Transport Fee (₹/mo)"   field="transport_fee"      value={String(draft.fees.transport_fee)}      onChange={(_, v) => setFees("transport_fee", Number(v))} />
-              <LField label="Other Monthly Fee (₹)"  field="other_monthly_fee"  value={String(draft.fees.other_monthly_fee)}  onChange={(_, v) => setFees("other_monthly_fee", Number(v))} />
-              <LField label="Admission Fee (₹)"      field="admission_fee"      value={String(draft.fees.admission_fee)}      onChange={(_, v) => setFees("admission_fee", Number(v))} />
-              <LField label="Admission Fee Paid (₹)" field="admission_fee_paid" value={String(draft.fees.admission_fee_paid)} onChange={(_, v) => setFees("admission_fee_paid", Number(v))} />
-              <LField label="Book Fee (₹)"           field="book_fee"           value={String(draft.fees.book_fee)}           onChange={(_, v) => setFees("book_fee", Number(v))} />
-              <LField label="Book Fee Paid (₹)"      field="book_fee_paid"      value={String(draft.fees.book_fee_paid)}      onChange={(_, v) => setFees("book_fee_paid", Number(v))} />
-              <LField label="Uniform Fee (₹)"        field="uniform_fee"        value={String(draft.fees.uniform_fee)}        onChange={(_, v) => setFees("uniform_fee", Number(v))} />
-              <LField label="Uniform Fee Paid (₹)"   field="uniform_fee_paid"   value={String(draft.fees.uniform_fee_paid)}   onChange={(_, v) => setFees("uniform_fee_paid", Number(v))} />
-              <LSelect label="Fee Status"            field="fee_status"         value={draft.fees.fee_status}                options={FEE_STATUS} onChange={(_, v) => setFees("fee_status", v)} />
+              {!isPrincipal && (
+                <>
+                  <div className="sm:col-span-2 xl:col-span-4"><Separator className="my-1" /></div>
+                  <p className="sm:col-span-2 xl:col-span-4 text-[11px] font-bold text-slate-400 uppercase">Fee Information</p>
+                  <LField label="Tuition Fee (₹/mo)"     field="tuition_fee"        value={String(draft.fees.tuition_fee)}        onChange={(_, v) => setFees("tuition_fee", Number(v))} />
+                  <LField label="Concession Amount (₹)"  field="concession_amount"  value={String(draft.fees.concession_amount)}  onChange={(_, v) => setFees("concession_amount", Number(v))} />
+                  <LField label="Concession Reason"      field="concession_reason"  value={draft.fees.concession_reason}         onChange={(_, v) => setFees("concession_reason", v)} />
+                  <LField label="Transport Fee (₹/mo)"   field="transport_fee"      value={String(draft.fees.transport_fee)}      onChange={(_, v) => setFees("transport_fee", Number(v))} />
+                  <LField label="Other Monthly Fee (₹)"  field="other_monthly_fee"  value={String(draft.fees.other_monthly_fee)}  onChange={(_, v) => setFees("other_monthly_fee", Number(v))} />
+                  <LField label="Admission Fee (₹)"      field="admission_fee"      value={String(draft.fees.admission_fee)}      onChange={(_, v) => setFees("admission_fee", Number(v))} />
+                  <LField label="Admission Fee Paid (₹)" field="admission_fee_paid" value={String(draft.fees.admission_fee_paid)} onChange={(_, v) => setFees("admission_fee_paid", Number(v))} />
+                  <LField label="Book Fee (₹)"           field="book_fee"           value={String(draft.fees.book_fee)}           onChange={(_, v) => setFees("book_fee", Number(v))} />
+                  <LField label="Book Fee Paid (₹)"      field="book_fee_paid"      value={String(draft.fees.book_fee_paid)}      onChange={(_, v) => setFees("book_fee_paid", Number(v))} />
+                  <LField label="Uniform Fee (₹)"        field="uniform_fee"        value={String(draft.fees.uniform_fee)}        onChange={(_, v) => setFees("uniform_fee", Number(v))} />
+                  <LField label="Uniform Fee Paid (₹)"   field="uniform_fee_paid"   value={String(draft.fees.uniform_fee_paid)}   onChange={(_, v) => setFees("uniform_fee_paid", Number(v))} />
+                  <LSelect label="Fee Status"            field="fee_status"         value={draft.fees.fee_status}                options={FEE_STATUS} onChange={(_, v) => setFees("fee_status", v)} />
+                </>
+              )}
               <div className="sm:col-span-2 xl:col-span-4">
                 <label className="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Address</label>
                 <Input value={draft.address} onChange={(e) => set("address", e.target.value)}

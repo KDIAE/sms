@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,106 +55,155 @@ export default function FeesPage() {
   const [loadingItems,  setLoadingItems]  = useState(false);
   const [loadingStruct, setLoadingStruct] = useState(false);
 
-  const fetchDashboard = useCallback(async () => {
-    setLoadingDash(true);
-    try {
-      setDashboard(await smsFeesApi.summary());
-    } catch (error) {
-      console.error("Error fetching dashboard:", error);
-    } finally {
-      setLoadingDash(false);
-    }
-  }, []);
+  // AbortController refs — one per fetch group so each can be cancelled independently
+  const tabCtrl      = useRef<AbortController | null>(null);
+  const mountCtrl    = useRef<AbortController | null>(null);
 
-  const fetchAdmission = useCallback(async () => {
-    setLoadingAdm(true);
-    try {
-      const q: Record<string, string> = {};
-      if (classFilter !== "All") q.class_name = classFilter;
-      if (search) q.search = search;
-      const qs = new URLSearchParams(q).toString();
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/fees/sms/admission${qs ? `?${qs}` : ""}`,
-        { headers: { Authorization: `Bearer ${localStorage.getItem("access_token") ?? ""}` } },
-      );
-      setAdmissionRows(await res.json());
-    } finally { setLoadingAdm(false); }
-  }, [classFilter, search]);
-
-  const fetchTuition = useCallback(async () => {
-    setLoadingTui(true);
-    try {
-      const q: Record<string, string> = {};
-      if (classFilter !== "All") q.class_name = classFilter;
-      if (search) q.search = search;
-      const qs = new URLSearchParams(q).toString();
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/fees/sms/tuition${qs ? `?${qs}` : ""}`,
-        { headers: { Authorization: `Bearer ${localStorage.getItem("access_token") ?? ""}` } },
-      );
-      setTuitionRows(await res.json());
-    } finally { setLoadingTui(false); }
-  }, [classFilter, search]);
-
-  const fetchItems = useCallback(async () => {
-    setLoadingItems(true);
-    try {
-      const q: Record<string, string> = {};
-      if (classFilter !== "All") q.class_name = classFilter;
-      if (search) q.search = search;
-      const booksQs   = new URLSearchParams({ ...q, type: "Books" }).toString();
-      const uniformQs = new URLSearchParams({ ...q, type: "Uniform" }).toString();
-      const headers = { Authorization: `Bearer ${localStorage.getItem("access_token") ?? ""}` };
-      const base = process.env.NEXT_PUBLIC_API_URL;
-      const [bRes, uRes] = await Promise.all([
-        fetch(`${base}/api/fees/sms/items?${booksQs}`,   { headers }),
-        fetch(`${base}/api/fees/sms/items?${uniformQs}`, { headers }),
-      ]);
-      setBookRows(await bRes.json());
-      setUniformRows(await uRes.json());
-    } finally { setLoadingItems(false); }
-  }, [classFilter, search]);
-
-  const fetchAllStudents = useCallback(async () => {
-    try {
-      const res = await studentsApi.list({ limit: 200 });
-      setAllStudents(res.data);
-      const classSet = new Set(res.data.map(s => s.class_name).filter(Boolean));
-      setClasses(Array.from(classSet).sort());
-    } catch { /* non-critical */ }
-  }, []);
-
-  const fetchStructures = useCallback(async () => {
-    setLoadingStruct(true);
-    try {
-      const [structs, classList] = await Promise.all([
-        smsFeesApi.getStructures(),
-        classesApi.list(),
-      ]);
-      const structMap = Object.fromEntries(structs.map(s => [s.class_name, s]));
-      const merged = classList.map(c => structMap[c.name] ?? { class_name: c.name, admission_fee: 0, registration_fee: 0, annual_fee: 0, tuition_fee: 0, transport_fee: 0, uniform_fee: 0 });
-      setFeeStructures(merged);
-    } catch { /* non-critical */ } finally {
-      setLoadingStruct(false);
-    }
-  }, []);
-
+  // ── On-mount: fetch dashboard, students list, and fee structures ──────────
   useEffect(() => {
-    fetchDashboard();
-    fetchAllStudents();
-    fetchStructures();
-  }, [fetchDashboard, fetchAllStudents, fetchStructures]);
+    const controller = new AbortController();
+    mountCtrl.current = controller;
+    const { signal } = controller;
 
+    async function loadMount() {
+      setLoadingDash(true);
+      try {
+        const [dashData, studentsRes] = await Promise.all([
+          smsFeesApi.summary(signal),
+          studentsApi.list({ limit: 200 }, signal),
+        ]);
+        if (signal.aborted) return;
+        setDashboard(dashData);
+        setAllStudents(studentsRes.data);
+        const classSet = new Set(studentsRes.data.map((s) => s.class_name).filter(Boolean));
+        setClasses(Array.from(classSet).sort());
+      } catch (e) {
+        if ((e as Error).name === "AbortError") return;
+        console.error("Error loading fees mount data:", e);
+      } finally {
+        if (!signal.aborted) setLoadingDash(false);
+      }
+
+      // Structures fetch (non-critical)
+      setLoadingStruct(true);
+      try {
+        const [structs, classList] = await Promise.all([
+          smsFeesApi.getStructures(signal),
+          classesApi.list(),
+        ]);
+        if (signal.aborted) return;
+        const structMap = Object.fromEntries(structs.map((s) => [s.class_name, s]));
+        const merged = classList.map(
+          (c) => structMap[c.name] ?? { class_name: c.name, admission_fee: 0, registration_fee: 0, annual_fee: 0, tuition_fee: 0, transport_fee: 0, uniform_fee: 0 },
+        );
+        setFeeStructures(merged);
+      } catch (e) {
+        if ((e as Error).name === "AbortError") return;
+      } finally {
+        if (!signal.aborted) setLoadingStruct(false);
+      }
+    }
+
+    loadMount();
+    return () => controller.abort();
+  }, []);
+
+  // ── Tab / filter changes: cancel previous in-flight request ───────────────
   useEffect(() => {
-    if (tab === "admissions") fetchAdmission();
-    if (tab === "tuition")    fetchTuition();
-    if (tab === "books" || tab === "uniforms") fetchItems();
-    if (tab === "dashboard")  fetchDashboard();
-    if (tab === "structure")  fetchStructures();
+    // Abort any previous tab fetch
+    tabCtrl.current?.abort();
+    const controller = new AbortController();
+    tabCtrl.current = controller;
+    const { signal } = controller;
+
+    const params = classFilter !== "All" ? { class_name: classFilter, search } : (search ? { search } : undefined);
+
+    async function loadTab() {
+      if (tab === "dashboard") {
+        setLoadingDash(true);
+        try {
+          const data = await smsFeesApi.summary(signal);
+          if (!signal.aborted) setDashboard(data);
+        } catch (e) {
+          if ((e as Error).name !== "AbortError") console.error(e);
+        } finally {
+          if (!signal.aborted) setLoadingDash(false);
+        }
+        return;
+      }
+
+      if (tab === "admissions") {
+        setLoadingAdm(true);
+        try {
+          const rows = await smsFeesApi.admission(params, signal);
+          if (!signal.aborted) setAdmissionRows(rows);
+        } catch (e) {
+          if ((e as Error).name !== "AbortError") console.error(e);
+        } finally {
+          if (!signal.aborted) setLoadingAdm(false);
+        }
+        return;
+      }
+
+      if (tab === "tuition") {
+        setLoadingTui(true);
+        try {
+          const rows = await smsFeesApi.tuition(params, signal);
+          if (!signal.aborted) setTuitionRows(rows);
+        } catch (e) {
+          if ((e as Error).name !== "AbortError") console.error(e);
+        } finally {
+          if (!signal.aborted) setLoadingTui(false);
+        }
+        return;
+      }
+
+      if (tab === "books" || tab === "uniforms") {
+        setLoadingItems(true);
+        try {
+          const [bRows, uRows] = await Promise.all([
+            smsFeesApi.items("Books",   params, signal),
+            smsFeesApi.items("Uniform", params, signal),
+          ]);
+          if (!signal.aborted) {
+            setBookRows(bRows);
+            setUniformRows(uRows);
+          }
+        } catch (e) {
+          if ((e as Error).name !== "AbortError") console.error(e);
+        } finally {
+          if (!signal.aborted) setLoadingItems(false);
+        }
+        return;
+      }
+
+      if (tab === "structure") {
+        setLoadingStruct(true);
+        try {
+          const [structs, classList] = await Promise.all([
+            smsFeesApi.getStructures(signal),
+            classesApi.list(),
+          ]);
+          if (signal.aborted) return;
+          const structMap = Object.fromEntries(structs.map((s) => [s.class_name, s]));
+          const merged = classList.map(
+            (c) => structMap[c.name] ?? { class_name: c.name, admission_fee: 0, registration_fee: 0, annual_fee: 0, tuition_fee: 0, transport_fee: 0, uniform_fee: 0 },
+          );
+          setFeeStructures(merged);
+        } catch (e) {
+          if ((e as Error).name !== "AbortError") console.error(e);
+        } finally {
+          if (!signal.aborted) setLoadingStruct(false);
+        }
+      }
+    }
+
+    loadTab();
+    return () => controller.abort();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, classFilter, search]);
 
-  const handleRecord = async (
+  const handleRecord = useCallback(async (
     studentId: string,
     feeType: FeeTypeOption,
     monthKey: string | null,
@@ -163,11 +212,24 @@ export default function FeesPage() {
     date: string,
   ) => {
     await smsFeesApi.record({ student_id: studentId, fee_type: feeType, month_key: monthKey ?? undefined, amount, method, date });
-    fetchDashboard();
-    if (feeType === "Admission")       fetchAdmission();
-    if (feeType === "Monthly Tuition") fetchTuition();
-    if (feeType === "Books" || feeType === "Uniform") fetchItems();
-  };
+    // Refresh affected data without cancelling any existing tab controller
+    const refreshCtrl = new AbortController();
+    const { signal } = refreshCtrl;
+    try {
+      const dash = await smsFeesApi.summary(signal);
+      setDashboard(dash);
+      if (feeType === "Admission")       setAdmissionRows(await smsFeesApi.admission(undefined, signal));
+      if (feeType === "Monthly Tuition") setTuitionRows(await smsFeesApi.tuition(undefined, signal));
+      if (feeType === "Books" || feeType === "Uniform") {
+        const [b, u] = await Promise.all([
+          smsFeesApi.items("Books",   undefined, signal),
+          smsFeesApi.items("Uniform", undefined, signal),
+        ]);
+        setBookRows(b);
+        setUniformRows(u);
+      }
+    } catch { /* non-critical */ }
+  }, []);
 
   return (
     <>

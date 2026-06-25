@@ -847,11 +847,14 @@ export interface AppUser {
 }
 
 export const usersApi = {
-  list(): Promise<AppUser[]> {
-    return apiFetch<AppUser[]>("/api/auth/users");
+  list(signal?: AbortSignal): Promise<AppUser[]> {
+    return apiFetch<AppUser[]>("/api/auth/users", { signal });
   },
   create(body: { email: string; name: string; role: string; password: string }): Promise<AppUser> {
     return apiFetch<AppUser>("/api/auth/users", { method: "POST", body: JSON.stringify(body) });
+  },
+  invite(body: { email: string; name: string; role: string }): Promise<AppUser> {
+    return apiFetch<AppUser>("/api/auth/invite", { method: "POST", body: JSON.stringify(body) });
   },
   update(id: string, body: Partial<{ name: string; role: string; password: string; is_active: boolean }>): Promise<AppUser> {
     return apiFetch<AppUser>(`/api/auth/users/${id}`, { method: "PUT", body: JSON.stringify(body) });
@@ -896,8 +899,8 @@ export interface RolesPayload {
 }
 
 export const settingsApi = {
-  getSchool(): Promise<SchoolSettings> {
-    return apiFetch<SchoolSettings>("/api/settings/school");
+  getSchool(signal?: AbortSignal): Promise<SchoolSettings> {
+    return apiFetch<SchoolSettings>("/api/settings/school", { signal });
   },
   updateSchool(body: SchoolSettings): Promise<SchoolSettings> {
     return apiFetch<SchoolSettings>("/api/settings/school", {
@@ -905,8 +908,8 @@ export const settingsApi = {
       body: JSON.stringify(body),
     });
   },
-  getAcademic(): Promise<AcademicSettings> {
-    return apiFetch<AcademicSettings>("/api/settings/academic");
+  getAcademic(signal?: AbortSignal): Promise<AcademicSettings> {
+    return apiFetch<AcademicSettings>("/api/settings/academic", { signal });
   },
   updateAcademic(body: AcademicSettings): Promise<AcademicSettings> {
     return apiFetch<AcademicSettings>("/api/settings/academic", {
@@ -914,8 +917,8 @@ export const settingsApi = {
       body: JSON.stringify(body),
     });
   },
-  getRoles(): Promise<RolesPayload> {
-    return apiFetch<RolesPayload>("/api/settings/roles");
+  getRoles(signal?: AbortSignal): Promise<RolesPayload> {
+    return apiFetch<RolesPayload>("/api/settings/roles", { signal });
   },
   updateRoles(body: RolesPayload): Promise<RolesPayload> {
     return apiFetch<RolesPayload>("/api/settings/roles", {
@@ -1014,17 +1017,28 @@ export interface ClassFeeStructure {
 }
 
 export const smsFeesApi = {
-  summary(): Promise<SmsFeeDashboard> {
-    return apiFetch<SmsFeeDashboard>("/api/fees/sms/summary");
+  summary(signal?: AbortSignal): Promise<SmsFeeDashboard> {
+    return apiFetch<SmsFeeDashboard>("/api/fees/sms/summary", { signal });
   },
-  admission(): Promise<SmsAdmissionFeeRow[]> {
-    return apiFetch<SmsAdmissionFeeRow[]>("/api/fees/sms/admission");
+  admission(params?: { class_name?: string; search?: string }, signal?: AbortSignal): Promise<SmsAdmissionFeeRow[]> {
+    const q = new URLSearchParams();
+    if (params?.class_name) q.set("class_name", params.class_name);
+    if (params?.search)     q.set("search",     params.search);
+    const qs = q.toString();
+    return apiFetch<SmsAdmissionFeeRow[]>(`/api/fees/sms/admission${qs ? `?${qs}` : ""}`, { signal });
   },
-  tuition(): Promise<SmsTuitionRow[]> {
-    return apiFetch<SmsTuitionRow[]>("/api/fees/sms/tuition");
+  tuition(params?: { class_name?: string; search?: string }, signal?: AbortSignal): Promise<SmsTuitionRow[]> {
+    const q = new URLSearchParams();
+    if (params?.class_name) q.set("class_name", params.class_name);
+    if (params?.search)     q.set("search",     params.search);
+    const qs = q.toString();
+    return apiFetch<SmsTuitionRow[]>(`/api/fees/sms/tuition${qs ? `?${qs}` : ""}`, { signal });
   },
-  items(type: "Books" | "Uniform"): Promise<SmsItemFeeRow[]> {
-    return apiFetch<SmsItemFeeRow[]>(`/api/fees/sms/items?type=${type}`);
+  items(type: "Books" | "Uniform", params?: { class_name?: string; search?: string }, signal?: AbortSignal): Promise<SmsItemFeeRow[]> {
+    const q = new URLSearchParams({ type });
+    if (params?.class_name) q.set("class_name", params.class_name);
+    if (params?.search)     q.set("search",     params.search);
+    return apiFetch<SmsItemFeeRow[]>(`/api/fees/sms/items?${q.toString()}`, { signal });
   },
   record(body: SmsFeeRecordRequest): Promise<{ receipt_no: string; message: string }> {
     return apiFetch("/api/fees/sms/record", {
@@ -1032,8 +1046,8 @@ export const smsFeesApi = {
       body: JSON.stringify(body),
     });
   },
-  getStructures(): Promise<ClassFeeStructure[]> {
-    return apiFetch<ClassFeeStructure[]>("/api/fees/sms/structure");
+  getStructures(signal?: AbortSignal): Promise<ClassFeeStructure[]> {
+    return apiFetch<ClassFeeStructure[]>("/api/fees/sms/structure", { signal });
   },
   upsertStructure(className: string, body: Omit<ClassFeeStructure, "class_name">): Promise<ClassFeeStructure> {
     return apiFetch<ClassFeeStructure>(`/api/fees/sms/structure/${encodeURIComponent(className)}`, {

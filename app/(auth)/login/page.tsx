@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
@@ -150,7 +151,7 @@ export default function LoginPage() {
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
-                  placeholder="• • • • • • • •"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
@@ -170,12 +171,12 @@ export default function LoginPage() {
 
             {/* Forgot */}
             <div className="flex items-center justify-end">
-              <button
-                type="button"
+              <Link
+                href="/forgot-password"
                 className="text-[13px] text-slate-600 underline underline-offset-2 hover:text-[#007BFF] transition-colors"
               >
                 Forgot password?
-              </button>
+              </Link>
             </div>
 
             {error && (

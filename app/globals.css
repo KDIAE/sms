@@ -137,3 +137,9 @@
 .grecaptcha-badge {
   visibility: hidden !important;
 }
+
+/* Space password masking dots to match the placeholder spacing */
+input[type="password"] {
+  letter-spacing: 0.25em;
+  font-size: 14px;
+}
