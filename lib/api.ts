@@ -1051,6 +1051,10 @@ export const smsFeesApi = {
       body: JSON.stringify(body),
     });
   },
+  unrecordTuition(studentId: string, monthKey: string): Promise<{ deleted: number; message: string }> {
+    const q = new URLSearchParams({ student_id: studentId, month_key: monthKey });
+    return apiFetch(`/api/fees/sms/record/tuition?${q}`, { method: "DELETE" });
+  },
   getStructures(signal?: AbortSignal): Promise<ClassFeeStructure[]> {
     return apiFetch<ClassFeeStructure[]>("/api/fees/sms/structure", { signal });
   },

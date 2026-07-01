@@ -1,18 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { SmsTuitionRow } from "@/lib/api";
+import { smsFeesApi, type SmsTuitionRow } from "@/lib/api";
 import { StatCard, RecordPaymentPopover, type PaymentMethod } from "./shared";
 
-export function TuitionTab({ rows, loading, monthKeys, monthLabels, onRecord }: {
+export function TuitionTab({ rows, loading, monthKeys, monthLabels, onRecord, onRefresh }: {
   rows: SmsTuitionRow[];
   loading: boolean;
   monthKeys: string[];
   monthLabels: string[];
   onRecord: (sid: string, monthKey: string, amt: number, method: PaymentMethod, date: string) => void;
+  onRefresh?: () => void;
 }) {
+  const [reversing, setReversing] = useState<string | null>(null); // "studentId-monthKey"
+
+  const handleUnrecord = async (studentId: string, monthKey: string) => {
+    const key = `${studentId}-${monthKey}`;
+    setReversing(key);
+    try {
+      await smsFeesApi.unrecordTuition(studentId, monthKey);
+      onRefresh?.();
+    } finally {
+      setReversing(null);
+    }
+  };
+
   const totalCollected = rows.reduce((a, r) =>
     a + Object.values(r.payments).reduce((b, p) => b + p.amount, 0), 0);
   const now = new Date();
@@ -50,12 +64,10 @@ export function TuitionTab({ rows, loading, monthKeys, monthLabels, onRecord }: 
                   {monthLabels.map((ml, i) => (
                     <TableHead key={monthKeys[i]} className="text-[11px] font-semibold uppercase text-slate-500 text-center min-w-[54px]">{ml}</TableHead>
                   ))}
-                  <TableHead className="text-[11px] font-semibold uppercase text-slate-500 pr-4 min-w-[80px]">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {rows.map(r => {
-                  const unpaidMonths = getUnpaidMonths(r);
                   return (
                     <TableRow key={r.student_id} className="hover:bg-slate-50 border-slate-100">
                       <TableCell className="pl-6 sticky left-0 bg-white z-10">
@@ -67,43 +79,44 @@ export function TuitionTab({ rows, loading, monthKeys, monthLabels, onRecord }: 
                       {monthKeys.map(mk => {
                         const p = r.payments[mk];
                         const isFuture = new Date(mk + "-01") > now;
+                        const reversingNow = reversing === `${r.student_id}-${mk}`;
                         return (
                           <TableCell key={mk} className="text-center px-1">
                             {isFuture ? (
                               <span className="text-[10px] text-slate-300">—</span>
                             ) : p ? (
-                              <span title={`${p.method} · ${p.date}`}
-                                className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700">
-                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8"><polyline points="2,5 4.2,7.5 8,2.5" /></svg>
-                              </span>
+                              <button
+                                title={`Paid · ${p.method} · ${p.date}\nClick to reverse`}
+                                disabled={reversingNow}
+                                onClick={() => handleUnrecord(r.student_id, mk)}
+                                className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 hover:bg-red-100 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
+                              >
+                                {reversingNow ? (
+                                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" className="animate-spin"><circle cx="5" cy="5" r="3.5" strokeDasharray="8 4" /></svg>
+                                ) : (
+                                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8"><polyline points="2,5 4.2,7.5 8,2.5" /></svg>
+                                )}
+                              </button>
                             ) : (
-                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-50 text-red-400">
-                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8"><line x1="2" y1="2" x2="8" y2="8" /><line x1="8" y1="2" x2="2" y2="8" /></svg>
-                              </span>
+                              <RecordPaymentPopover
+                                trigger={
+                                  <button
+                                    title="Click to mark as paid"
+                                    className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-50 text-red-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors cursor-pointer"
+                                  >
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8"><line x1="2" y1="2" x2="8" y2="8" /><line x1="8" y1="2" x2="2" y2="8" /></svg>
+                                  </button>
+                                }
+                                studentName={r.name}
+                                feeType={`Tuition – ${monthLabels[monthKeys.indexOf(mk)]}`}
+                                totalAmount={r.monthly_amount}
+                                currentPaid={0}
+                                onRecord={(amt, method, date) => onRecord(r.student_id, mk, amt, method, date)}
+                              />
                             )}
                           </TableCell>
                         );
                       })}
-                      <TableCell className="pr-4">
-                        {unpaidMonths.length > 0 && (
-                          <RecordPaymentPopover
-                            trigger={<Button size="sm" variant="outline" className="h-7 text-[11px] border-[#007BFF] text-[#007BFF] hover:bg-blue-50 whitespace-nowrap">Pay ({unpaidMonths.length})</Button>}
-                            studentName={r.name}
-                            feeType={`Tuition – ${unpaidMonths.length} month${unpaidMonths.length > 1 ? "s" : ""}`}
-                            totalAmount={r.monthly_amount * unpaidMonths.length}
-                            currentPaid={0}
-                            onRecord={(amt, method, date) => {
-                              let remaining = amt;
-                              for (const mk of unpaidMonths) {
-                                if (remaining <= 0) break;
-                                const mAmt = Math.min(r.monthly_amount, remaining);
-                                onRecord(r.student_id, mk, mAmt, method, date);
-                                remaining -= mAmt;
-                              }
-                            }}
-                          />
-                        )}
-                      </TableCell>
                     </TableRow>
                   );
                 })}

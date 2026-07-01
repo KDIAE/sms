@@ -303,6 +303,12 @@ export default function FeesPage() {
             monthKeys={dashboard?.month_keys ?? []}
             monthLabels={dashboard?.month_labels ?? []}
             onRecord={(sid, mk, amt, method, date) => handleRecord(sid, "Monthly Tuition", mk, amt, method, date)}
+            onRefresh={async () => {
+              setLoadingTui(true);
+              try { setTuitionRows(await smsFeesApi.tuition()); }
+              catch { /* non-critical */ }
+              finally { setLoadingTui(false); }
+            }}
           />
         </TabsContent>
 
