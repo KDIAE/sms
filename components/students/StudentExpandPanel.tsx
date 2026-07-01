@@ -1,26 +1,87 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faFileLines, faUsers, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { studentsApi, type Student } from "@/lib/api";
+import { Switch } from "@/components/ui/switch";
+import { studentsApi, type Student, type ClassFeeStructure } from "@/lib/api";
 import { LField } from "@/components/form/LField";
 import { LDatePicker } from "@/components/form/LDatePicker";
 import { LSelect } from "@/components/form/LSelect";
 import { FileField } from "@/components/form/FileField";
 import { BLOOD_GROUPS, ID_TYPES, RELATIONS, FEE_STATUS, SECTIONS } from "@/components/form/constants";
 import { useAuth } from "@/lib/auth-context";
+import usePlacesAutocomplete from "use-places-autocomplete";
+
+// ── Google Maps Places Autocomplete ──────────────────────────────────────────
+function AddressAutocomplete({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const {
+    ready,
+    value: query,
+    suggestions: { status, data },
+    setValue,
+    clearSuggestions,
+  } = usePlacesAutocomplete({
+    requestOptions: { componentRestrictions: { country: "in" } },
+    debounce: 300,
+  });
+
+  // Sync external value → input when suggestions aren't open
+  const [focused, setFocused] = useState(false);
+  const inputValue = focused ? query : value;
+
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(e.target.value);
+    onChange(e.target.value);
+  };
+
+  const handleSelect = (description: string) => {
+    setValue(description, false);
+    onChange(description);
+    clearSuggestions();
+    setFocused(false);
+  };
+
+  return (
+    <div className="relative">
+      <label className="text-[11px] font-semibold text-slate-400 uppercase block mb-1">{label}</label>
+      <Input
+        value={inputValue}
+        onChange={handleInput}
+        onFocus={() => { setFocused(true); setValue(value, false); }}
+        onBlur={() => setTimeout(() => setFocused(false), 150)}
+        className="h-8 text-[12px] bg-white border-slate-200"
+        placeholder="Start typing an address…"
+        autoComplete="off"
+      />
+      {status === "OK" && focused && data.length > 0 && (
+        <ul className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-md shadow-md text-[12px] max-h-48 overflow-y-auto">
+          {data.map(({ place_id, description }) => (
+            <li
+              key={place_id}
+              className="px-3 py-2 cursor-pointer hover:bg-slate-50 text-slate-700 border-b border-slate-100 last:border-0"
+              onMouseDown={() => handleSelect(description)}
+            >
+              {description}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export function StudentExpandPanel({
-  s, onClose, classesList, onUpdated, mobile = false, existingCodes = [],
+  s, onClose, classesList, feeStructures = [], onUpdated, mobile = false, existingCodes = [],
 }: {
   s: Student;
   onClose: () => void;
   classesList: string[];
+  feeStructures?: ClassFeeStructure[];
   onUpdated: (updated: Student) => void;
   mobile?: boolean;
   existingCodes?: string[];
@@ -31,11 +92,41 @@ export function StudentExpandPanel({
   const [draft, setDraft] = useState<Student>({ ...s });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [concessionEnabled, setConcessionEnabled] = useState(
+    (s.fees.concession_amount ?? 0) > 0 || Boolean(s.fees.concession_reason)
+  );
 
   const set    = (f: string, v: string) => setDraft((p) => ({ ...p, [f]: v }));
   const setG   = (f: string, v: string) => setDraft((p) => ({ ...p, guardian:  { ...p.guardian,  [f]: v } }));
   const setG2  = (f: string, v: string) => setDraft((p) => ({ ...p, guardian2: { ...p.guardian2, [f]: v } }));
   const setFees = (f: string, v: string | number) => setDraft((p) => ({ ...p, fees: { ...p.fees, [f]: v } }));
+
+  // Auto-populate fees when class changes
+  const prevClass = useRef(draft.class_name);
+  useEffect(() => {
+    if (draft.class_name === prevClass.current) return;
+    prevClass.current = draft.class_name;
+    const struct = feeStructures.find((st) => st.class_name === draft.class_name);
+    if (struct) {
+      setDraft((p) => ({
+        ...p,
+        fees: {
+          ...p.fees,
+          tuition_fee:   struct.tuition_fee,
+          transport_fee: struct.transport_fee,
+          uniform_fee:   struct.uniform_fee,
+          admission_fee: struct.admission_fee,
+        },
+      }));
+    }
+  }, [draft.class_name, feeStructures]);
+
+  const handleConcessionToggle = (enabled: boolean) => {
+    setConcessionEnabled(enabled);
+    if (!enabled) {
+      setDraft((p) => ({ ...p, fees: { ...p.fees, concession_amount: 0, concession_reason: "" } }));
+    }
+  };
 
   const isDuplicateCode =
     draft.student_code.trim() !== "" &&
@@ -78,13 +169,18 @@ export function StudentExpandPanel({
               <LField      label="Phone"          field="phone" type="tel"          value={draft.phone}         onChange={set} />
               <LField      label="Email"          field="email" type="email"          value={draft.email}         onChange={set} />
               <LDatePicker label="Admission Date" field="admission_date" value={draft.admission_date} onChange={set} />
+              <div className="sm:col-span-2 xl:col-span-4">
+                <AddressAutocomplete
+                  label="Address"
+                  value={draft.address}
+                  onChange={(v) => set("address", v)}
+                />
+              </div>
               {!isPrincipal && (
                 <>
                   <div className="sm:col-span-2 xl:col-span-4"><Separator className="my-1" /></div>
                   <p className="sm:col-span-2 xl:col-span-4 text-[11px] font-bold text-slate-400 uppercase">Fee Information</p>
                   <LField label="Tuition Fee (₹/mo)"     field="tuition_fee"        value={String(draft.fees.tuition_fee)}        onChange={(_, v) => setFees("tuition_fee", Number(v))} />
-                  <LField label="Concession Amount (₹)"  field="concession_amount"  value={String(draft.fees.concession_amount)}  onChange={(_, v) => setFees("concession_amount", Number(v))} />
-                  <LField label="Concession Reason"      field="concession_reason"  value={draft.fees.concession_reason}         onChange={(_, v) => setFees("concession_reason", v)} />
                   <LField label="Transport Fee (₹/mo)"   field="transport_fee"      value={String(draft.fees.transport_fee)}      onChange={(_, v) => setFees("transport_fee", Number(v))} />
                   <LField label="Other Monthly Fee (₹)"  field="other_monthly_fee"  value={String(draft.fees.other_monthly_fee)}  onChange={(_, v) => setFees("other_monthly_fee", Number(v))} />
                   <LField label="Admission Fee (₹)"      field="admission_fee"      value={String(draft.fees.admission_fee)}      onChange={(_, v) => setFees("admission_fee", Number(v))} />
@@ -94,13 +190,25 @@ export function StudentExpandPanel({
                   <LField label="Uniform Fee (₹)"        field="uniform_fee"        value={String(draft.fees.uniform_fee)}        onChange={(_, v) => setFees("uniform_fee", Number(v))} />
                   <LField label="Uniform Fee Paid (₹)"   field="uniform_fee_paid"   value={String(draft.fees.uniform_fee_paid)}   onChange={(_, v) => setFees("uniform_fee_paid", Number(v))} />
                   <LSelect label="Fee Status"            field="fee_status"         value={draft.fees.fee_status}                options={FEE_STATUS} onChange={(_, v) => setFees("fee_status", v)} />
+                  {/* Fee Concession toggle */}
+                  <div className="sm:col-span-2 xl:col-span-4">
+                    <Separator className="my-1" />
+                  </div>
+                  <div className="sm:col-span-2 xl:col-span-4 flex items-center justify-between">
+                    <p className="text-[11px] font-bold text-slate-400 uppercase">Fee Concession</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-slate-500">{concessionEnabled ? "Enabled" : "Disabled"}</span>
+                      <Switch checked={concessionEnabled} onCheckedChange={handleConcessionToggle} />
+                    </div>
+                  </div>
+                  {concessionEnabled && (
+                    <>
+                      <LField label="Concession Amount (₹)" field="concession_amount" value={String(draft.fees.concession_amount)} onChange={(_, v) => setFees("concession_amount", Number(v))} />
+                      <LField label="Concession Reason"     field="concession_reason" value={draft.fees.concession_reason}        onChange={(_, v) => setFees("concession_reason", v)} />
+                    </>
+                  )}
                 </>
               )}
-              <div className="sm:col-span-2 xl:col-span-4">
-                <label className="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Address</label>
-                <Input value={draft.address} onChange={(e) => set("address", e.target.value)}
-                  className="h-8 text-[12px] bg-white border-slate-200" />
-              </div>
             </div>
           </div>
 
@@ -147,9 +255,11 @@ export function StudentExpandPanel({
                   <LSelect label="ID Type"    field="id_type"    value={draft.guardian.id_type}    options={ID_TYPES} onChange={(_, v) => setG("id_type", v)} />
                   <LField  label="ID Number"  field="id_number"  value={draft.guardian.id_number}  onChange={(_, v) => setG("id_number", v)} />
                   <div className="sm:col-span-2">
-                    <label className="text-[11px] font-semibold text-slate-400 uppercase block mb-1">Address (if different)</label>
-                    <Input value={draft.guardian.address} onChange={(e) => setG("address", e.target.value)}
-                      className="h-8 text-[12px] bg-white border-slate-200" />
+                    <AddressAutocomplete
+                      label="Address (if different)"
+                      value={draft.guardian.address}
+                      onChange={(v) => setG("address", v)}
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

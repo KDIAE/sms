@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { studentsApi, classesApi, type Student } from "@/lib/api";
+import { studentsApi, classesApi, smsFeesApi, type Student, type ClassFeeStructure } from "@/lib/api";
 import { AddStudentWizard } from "@/components/students/AddStudentWizard";
 import { StudentExpandPanel } from "@/components/students/StudentExpandPanel";
 import { feeVariant } from "@/components/students/constants";
@@ -23,6 +23,7 @@ export default function StudentsPage() {
   const [students, setStudents]       = useState<Student[]>([]);
   const [stats, setStats]             = useState({ total: 0, fee_paid: 0, fee_issues: 0, low_attendance: 0 });
   const [classesList, setClassesList] = useState<string[]>([]);
+  const [feeStructures, setFeeStructures] = useState<ClassFeeStructure[]>([]);
   const [loading, setLoading]         = useState(true);
   const [search, setSearch]           = useState("");
   const [filterClass, setFilterClass]             = useState("All");
@@ -36,7 +37,7 @@ export default function StudentsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [res, statsRes, classesRes] = await Promise.all([
+      const [res, statsRes, classesRes, structs] = await Promise.all([
         studentsApi.list({
           search:     search     || undefined,
           class_name: filterClass !== "All" ? filterClass : undefined,
@@ -46,10 +47,12 @@ export default function StudentsPage() {
         }),
         studentsApi.stats(),
         classesApi.list(),
+        smsFeesApi.getStructures(),
       ]);
       setStudents(res.data);
       setStats(statsRes);
       setClassesList(classesRes.map((c) => c.name));
+      setFeeStructures(structs);
     } finally {
       setLoading(false);
     }
@@ -263,6 +266,7 @@ export default function StudentsPage() {
                             mobile
                             s={s}
                             classesList={classesList}
+                            feeStructures={feeStructures}
                             existingCodes={students.filter((x) => x.id !== s.id).map((x) => x.student_code)}
                             onClose={() => setExpandedId(null)}
                             onUpdated={handleUpdated}
@@ -344,6 +348,7 @@ export default function StudentsPage() {
                                 key={`${s.id}-expand`}
                                 s={s}
                                 classesList={classesList}
+                                feeStructures={feeStructures}
                                 existingCodes={students.filter((x) => x.id !== s.id).map((x) => x.student_code)}
                                 onClose={() => setExpandedId(null)}
                                 onUpdated={handleUpdated}

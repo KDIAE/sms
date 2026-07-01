@@ -160,7 +160,7 @@ export interface StudentListParams {
 }
 
 export const studentsApi = {
-  list(params: StudentListParams = {}): Promise<StudentListResponse> {
+  list(params: StudentListParams = {}, signal?: AbortSignal): Promise<StudentListResponse> {
     const q = new URLSearchParams();
     if (params.search)     q.set("search",     params.search);
     if (params.class_name) q.set("class_name", params.class_name);
@@ -169,7 +169,7 @@ export const studentsApi = {
     if (params.status)     q.set("status",     params.status);
     if (params.page)       q.set("page",       String(params.page));
     if (params.limit)      q.set("limit",      String(params.limit));
-    return apiFetch<StudentListResponse>(`/api/students?${q}`);
+    return apiFetch<StudentListResponse>(`/api/students?${q}`, { signal });
   },
 
   stats(): Promise<StudentStats> {

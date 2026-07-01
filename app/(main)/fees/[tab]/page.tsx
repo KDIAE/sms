@@ -59,6 +59,19 @@ export default function FeesPage() {
   const tabCtrl      = useRef<AbortController | null>(null);
   const mountCtrl    = useRef<AbortController | null>(null);
 
+  // ── Standalone fetchDashboard (used by DashboardTab onRetry) ─────────────
+  const fetchDashboard = useCallback(async () => {
+    setLoadingDash(true);
+    try {
+      const data = await smsFeesApi.summary();
+      setDashboard(data);
+    } catch (e) {
+      console.error("Error fetching dashboard:", e);
+    } finally {
+      setLoadingDash(false);
+    }
+  }, []);
+
   // ── On-mount: fetch dashboard, students list, and fee structures ──────────
   useEffect(() => {
     const controller = new AbortController();
