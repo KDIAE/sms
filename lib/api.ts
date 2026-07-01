@@ -17,12 +17,17 @@ export interface FeeInfo {
   transport_fee: number;
   other_monthly_fee: number;
   // one-time
+  registration_fee: number;
+  annual_fee: number;
   admission_fee: number;
   admission_fee_paid: number;
+  admission_concession_amount: number;
   book_fee: number;
   book_fee_paid: number;
+  book_concession_amount: number;
   uniform_fee: number;
   uniform_fee_paid: number;
+  uniform_concession_amount: number;
   // overall
   fee_status: string;
 }

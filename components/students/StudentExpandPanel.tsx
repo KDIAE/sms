@@ -13,7 +13,7 @@ import { LField } from "@/components/form/LField";
 import { LDatePicker } from "@/components/form/LDatePicker";
 import { LSelect } from "@/components/form/LSelect";
 import { FileField } from "@/components/form/FileField";
-import { BLOOD_GROUPS, ID_TYPES, RELATIONS, FEE_STATUS, SECTIONS } from "@/components/form/constants";
+import { BLOOD_GROUPS, ID_TYPES, RELATIONS, SECTIONS } from "@/components/form/constants";
 import { useAuth } from "@/lib/auth-context";
 import usePlacesAutocomplete from "use-places-autocomplete";
 
@@ -93,7 +93,11 @@ export function StudentExpandPanel({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [concessionEnabled, setConcessionEnabled] = useState(
-    (s.fees.concession_amount ?? 0) > 0 || Boolean(s.fees.concession_reason)
+    (s.fees.concession_amount ?? 0) > 0 ||
+    (s.fees.admission_concession_amount ?? 0) > 0 ||
+    (s.fees.book_concession_amount ?? 0) > 0 ||
+    (s.fees.uniform_concession_amount ?? 0) > 0 ||
+    Boolean(s.fees.concession_reason)
   );
 
   const set    = (f: string, v: string) => setDraft((p) => ({ ...p, [f]: v }));
@@ -112,10 +116,12 @@ export function StudentExpandPanel({
         ...p,
         fees: {
           ...p.fees,
-          tuition_fee:   struct.tuition_fee,
-          transport_fee: struct.transport_fee,
-          uniform_fee:   struct.uniform_fee,
-          admission_fee: struct.admission_fee,
+          tuition_fee:      struct.tuition_fee,
+          transport_fee:    struct.transport_fee,
+          uniform_fee:      struct.uniform_fee,
+          admission_fee:    struct.admission_fee,
+          registration_fee: struct.registration_fee,
+          annual_fee:       struct.annual_fee,
         },
       }));
     }
@@ -124,7 +130,17 @@ export function StudentExpandPanel({
   const handleConcessionToggle = (enabled: boolean) => {
     setConcessionEnabled(enabled);
     if (!enabled) {
-      setDraft((p) => ({ ...p, fees: { ...p.fees, concession_amount: 0, concession_reason: "" } }));
+      setDraft((p) => ({
+        ...p,
+        fees: {
+          ...p.fees,
+          concession_amount: 0,
+          concession_reason: "",
+          admission_concession_amount: 0,
+          book_concession_amount: 0,
+          uniform_concession_amount: 0,
+        },
+      }));
     }
   };
 
@@ -180,20 +196,21 @@ export function StudentExpandPanel({
                 <>
                   <div className="sm:col-span-2 xl:col-span-4"><Separator className="my-1" /></div>
                   <p className="sm:col-span-2 xl:col-span-4 text-[11px] font-bold text-slate-400 uppercase">Fee Information</p>
-                  <LField label="Tuition Fee (₹/mo)"     field="tuition_fee"        value={String(draft.fees.tuition_fee)}        onChange={(_, v) => setFees("tuition_fee", Number(v))} />
-                  <LField label="Transport Fee (₹/mo)"   field="transport_fee"      value={String(draft.fees.transport_fee)}      onChange={(_, v) => setFees("transport_fee", Number(v))} />
-                  <LField label="Other Monthly Fee (₹)"  field="other_monthly_fee"  value={String(draft.fees.other_monthly_fee)}  onChange={(_, v) => setFees("other_monthly_fee", Number(v))} />
+
+                  <LField label="Tuition Fee (₹/mo)"    field="tuition_fee"       value={String(draft.fees.tuition_fee)}       onChange={(_, v) => setFees("tuition_fee", Number(v))} />
+                  <LField label="Transport Fee (₹/mo)"  field="transport_fee"     value={String(draft.fees.transport_fee)}     onChange={(_, v) => setFees("transport_fee", Number(v))} />
+                  <LField label="Other Monthly Fee (₹)" field="other_monthly_fee" value={String(draft.fees.other_monthly_fee)} onChange={(_, v) => setFees("other_monthly_fee", Number(v))} />
+                  <LField label="Registration Fee (₹)"  field="registration_fee"  value={String(draft.fees.registration_fee)}  onChange={(_, v) => setFees("registration_fee", Number(v))} />
+                  <LField label="Annual Fee (₹)"        field="annual_fee"        value={String(draft.fees.annual_fee)}        onChange={(_, v) => setFees("annual_fee",       Number(v))} />
                   <LField label="Admission Fee (₹)"      field="admission_fee"      value={String(draft.fees.admission_fee)}      onChange={(_, v) => setFees("admission_fee", Number(v))} />
                   <LField label="Admission Fee Paid (₹)" field="admission_fee_paid" value={String(draft.fees.admission_fee_paid)} onChange={(_, v) => setFees("admission_fee_paid", Number(v))} />
                   <LField label="Book Fee (₹)"           field="book_fee"           value={String(draft.fees.book_fee)}           onChange={(_, v) => setFees("book_fee", Number(v))} />
                   <LField label="Book Fee Paid (₹)"      field="book_fee_paid"      value={String(draft.fees.book_fee_paid)}      onChange={(_, v) => setFees("book_fee_paid", Number(v))} />
                   <LField label="Uniform Fee (₹)"        field="uniform_fee"        value={String(draft.fees.uniform_fee)}        onChange={(_, v) => setFees("uniform_fee", Number(v))} />
                   <LField label="Uniform Fee Paid (₹)"   field="uniform_fee_paid"   value={String(draft.fees.uniform_fee_paid)}   onChange={(_, v) => setFees("uniform_fee_paid", Number(v))} />
-                  <LSelect label="Fee Status"            field="fee_status"         value={draft.fees.fee_status}                options={FEE_STATUS} onChange={(_, v) => setFees("fee_status", v)} />
-                  {/* Fee Concession toggle */}
-                  <div className="sm:col-span-2 xl:col-span-4">
-                    <Separator className="my-1" />
-                  </div>
+
+                  {/* Concession toggle */}
+                  <div className="sm:col-span-2 xl:col-span-4"><Separator className="my-1" /></div>
                   <div className="sm:col-span-2 xl:col-span-4 flex items-center justify-between">
                     <p className="text-[11px] font-bold text-slate-400 uppercase">Fee Concession</p>
                     <div className="flex items-center gap-2">
@@ -203,8 +220,13 @@ export function StudentExpandPanel({
                   </div>
                   {concessionEnabled && (
                     <>
-                      <LField label="Concession Amount (₹)" field="concession_amount" value={String(draft.fees.concession_amount)} onChange={(_, v) => setFees("concession_amount", Number(v))} />
-                      <LField label="Concession Reason"     field="concession_reason" value={draft.fees.concession_reason}        onChange={(_, v) => setFees("concession_reason", v)} />
+                      <div className="sm:col-span-2 xl:col-span-4">
+                        <LField label="Concession Reason" field="concession_reason" value={draft.fees.concession_reason} onChange={(_, v) => setFees("concession_reason", v)} />
+                      </div>
+                      <LField label="Tuition Concession (₹/mo)"   field="concession_amount"            value={String(draft.fees.concession_amount)}            onChange={(_, v) => setFees("concession_amount", Number(v))} />
+                      <LField label="Admission Concession (₹)"    field="admission_concession_amount"  value={String(draft.fees.admission_concession_amount)}  onChange={(_, v) => setFees("admission_concession_amount", Number(v))} />
+                      <LField label="Book Concession (₹)"         field="book_concession_amount"       value={String(draft.fees.book_concession_amount)}       onChange={(_, v) => setFees("book_concession_amount", Number(v))} />
+                      <LField label="Uniform Concession (₹)"      field="uniform_concession_amount"    value={String(draft.fees.uniform_concession_amount)}    onChange={(_, v) => setFees("uniform_concession_amount", Number(v))} />
                     </>
                   )}
                 </>
